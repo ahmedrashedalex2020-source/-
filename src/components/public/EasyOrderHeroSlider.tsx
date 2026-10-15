@@ -41,7 +41,7 @@ export const EasyOrderHeroSlider: React.FC<EasyOrderHeroSliderProps> = ({
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      <div className="relative h-44 sm:h-64 md:h-72 w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm group border border-gray-100">
+        <div className="relative h-44 sm:h-64 md:h-72 w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-md group border-2 border-[#C89D4B]/70">
         {/* Background Image with Warm Overlay */}
         <img
           src={slide.imageUrl}
@@ -55,8 +55,8 @@ export const EasyOrderHeroSlider: React.FC<EasyOrderHeroSliderProps> = ({
         {/* Slide Content */}
         <div className="absolute inset-0 p-4 sm:p-8 flex flex-col justify-center items-start text-white max-w-xl">
           {/* Badge */}
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d31414] text-white text-[11px] sm:text-xs font-black shadow-sm mb-2 animate-in fade-in duration-300">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#B81D22] text-[#FFF9EA] text-[11px] sm:text-xs font-black shadow-sm mb-2 animate-in fade-in duration-300 border border-[#EEA323]">
+            <Sparkles className="w-3.5 h-3.5 text-[#EEA323] fill-[#EEA323]" />
             <span>{isAr ? slide.badgeAr : slide.badgeEn}</span>
           </span>
 
@@ -66,14 +66,14 @@ export const EasyOrderHeroSlider: React.FC<EasyOrderHeroSliderProps> = ({
           </h2>
 
           {/* Subtitle */}
-          <p className="text-xs sm:text-sm text-gray-200 mt-1 line-clamp-2 max-w-md font-medium drop-shadow-xs">
+          <p className="text-xs sm:text-sm text-amber-100/90 mt-1 line-clamp-2 max-w-md font-medium drop-shadow-xs">
             {isAr ? slide.subtitleAr : slide.subtitleEn}
           </p>
 
-          {/* Action CTA Button */}
+          {/* Action CTA Button in Ochre Gold */}
           <button
             onClick={() => onSelectCategory(slide.categoryId)}
-            className="mt-3 sm:mt-4 inline-flex items-center gap-2 bg-white hover:bg-amber-50 text-[#d31414] font-black px-4 py-2 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer"
+            className="mt-3 sm:mt-4 inline-flex items-center gap-2 bg-[#EEA323] hover:bg-[#DB9116] text-[#2B160C] font-black px-4 py-2 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer border border-[#2B160C]/30"
           >
             <span>{isAr ? 'اطلب الصنف الآن' : 'Order Now'}</span>
             {isAr ? (
@@ -87,7 +87,7 @@ export const EasyOrderHeroSlider: React.FC<EasyOrderHeroSliderProps> = ({
         {/* Navigation Arrows */}
         <button
           onClick={handlePrev}
-          className="absolute start-2 sm:start-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-xs flex items-center justify-center transition opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
+          className="absolute start-2 sm:start-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/50 hover:bg-black/80 text-[#FAF1DC] backdrop-blur-xs flex items-center justify-center transition opacity-0 group-hover:opacity-100 cursor-pointer shadow-md border border-[#C89D4B]/40"
           aria-label="Previous Slide"
         >
           {isAr ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
@@ -95,7 +95,7 @@ export const EasyOrderHeroSlider: React.FC<EasyOrderHeroSliderProps> = ({
 
         <button
           onClick={handleNext}
-          className="absolute end-2 sm:end-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-xs flex items-center justify-center transition opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
+          className="absolute end-2 sm:end-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/50 hover:bg-black/80 text-[#FAF1DC] backdrop-blur-xs flex items-center justify-center transition opacity-0 group-hover:opacity-100 cursor-pointer shadow-md border border-[#C89D4B]/40"
           aria-label="Next Slide"
         >
           {isAr ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
@@ -109,7 +109,7 @@ export const EasyOrderHeroSlider: React.FC<EasyOrderHeroSliderProps> = ({
               onClick={() => setCurrentSlide(index)}
               className={`h-2 rounded-full transition-all cursor-pointer ${
                 currentSlide === index
-                  ? 'w-6 bg-white shadow-sm'
+                  ? 'w-6 bg-[#EEA323] shadow-sm'
                   : 'w-2 bg-white/50 hover:bg-white/80'
               }`}
               aria-label={`Go to slide ${index + 1}`}

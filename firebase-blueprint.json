@@ -99,6 +99,24 @@
         "createdAt": { "type": "string" }
       },
       "required": ["uid", "email", "role"]
+    },
+    "CustomerOrder": {
+      "title": "CustomerOrder",
+      "description": "Customer food order with item breakdown, customer details, and order status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "orderType": { "type": "string" },
+        "addressOrTable": { "type": "string" },
+        "orderNotes": { "type": "string" },
+        "items": { "type": "array" },
+        "totalBaisa": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "customerName", "customerPhone", "orderType", "items", "totalBaisa", "status"]
     }
   },
   "firestore": {
@@ -121,6 +139,10 @@
     "/admins/{adminUid}": {
       "schema": { "$ref": "AdminUser" },
       "description": "Admin access registry"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "CustomerOrder" },
+      "description": "Incoming customer orders collection"
     }
   }
 }

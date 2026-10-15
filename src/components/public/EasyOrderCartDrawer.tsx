@@ -139,7 +139,7 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
         delivery: isAr ? 'توصيل للمنزل' : 'Home Delivery',
       }[orderType];
 
-      let msg = `*طلب جديد من متجر كبدة إسكندراني (EasyOrder)* 🍽️\n`;
+      let msg = `*طلب جديد من مطعم كبدة إسكندراني* 🍽️\n`;
       msg += `رقم الطلب: #${orderId.slice(-6)}\n`;
       msg += `👤 العميل: ${customerName.trim()}\n`;
       msg += `📞 الهاتف: ${customerPhone.trim()}\n`;
@@ -212,14 +212,14 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
       <div className="fixed inset-y-0 left-0 max-w-full flex">
         <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out animate-in slide-in-from-left">
           {/* Drawer Header */}
-          <div className="px-4 py-3.5 bg-[#d31414] text-white flex items-center justify-between shrink-0 shadow-xs">
+          <div className="px-4 py-3.5 bg-gradient-to-r from-[#8B2220] to-[#721B19] text-white flex items-center justify-between shrink-0 shadow-xs border-b border-[#C58D38]/30">
             <div className="flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5 text-amber-300" />
+              <ShoppingBag className="w-5 h-5 text-[#E5A93C]" />
               <div>
                 <h3 className="text-base font-black">
                   {isAr ? 'سلة التسوق' : 'Shopping Cart'}
                 </h3>
-                <span className="text-xs text-white/80 font-medium">
+                <span className="text-xs text-amber-200/90 font-medium">
                   {totalQuantity} {isAr ? 'منتجات مختارة' : 'selected items'}
                 </span>
               </div>
@@ -310,7 +310,7 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
                             {itemName}
                           </h5>
                           {variantName && (
-                            <span className="text-[11px] text-[#d31414] font-bold block">
+                            <span className="text-[11px] text-[#B81D22] font-bold block">
                               {variantName}
                             </span>
                           )}
@@ -357,7 +357,7 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
                 {/* Customer Checkout Form */}
                 <div className="bg-gray-50 p-3 sm:p-3.5 rounded-2xl border border-gray-200/80 space-y-3">
                   <h4 className="text-xs font-black text-gray-900 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-[#d31414]" />
+                    <User className="w-3.5 h-3.5 text-[#8B2220]" />
                     <span>{isAr ? 'بيانات الزبون والتوصيل' : 'Customer & Delivery Info'}</span>
                   </h4>
 
@@ -368,7 +368,7 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
                       onClick={() => setOrderType('takeaway')}
                       className={`py-1.5 rounded-lg flex items-center justify-center gap-1 transition cursor-pointer ${
                         orderType === 'takeaway'
-                          ? 'bg-white text-[#d31414] shadow-xs font-black'
+                          ? 'bg-white text-[#8B2220] shadow-xs font-black'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
@@ -380,7 +380,7 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
                       onClick={() => setOrderType('delivery')}
                       className={`py-1.5 rounded-lg flex items-center justify-center gap-1 transition cursor-pointer ${
                         orderType === 'delivery'
-                          ? 'bg-white text-[#d31414] shadow-xs font-black'
+                          ? 'bg-white text-[#8B2220] shadow-xs font-black'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
@@ -392,7 +392,7 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
                       onClick={() => setOrderType('dinein')}
                       className={`py-1.5 rounded-lg flex items-center justify-center gap-1 transition cursor-pointer ${
                         orderType === 'dinein'
-                          ? 'bg-white text-[#d31414] shadow-xs font-black'
+                          ? 'bg-white text-[#8B2220] shadow-xs font-black'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
@@ -413,7 +413,7 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
                         value={customerName}
                         onChange={(e) => setCustomerName(e.target.value)}
                         placeholder={isAr ? 'مثال: أحمد راشد' : 'e.g. John Doe'}
-                        className="w-full bg-white border border-gray-300 rounded-xl py-1.5 ltr:pl-8 ltr:pr-3 rtl:pr-8 rtl:pl-3 text-xs font-semibold focus:outline-none focus:border-[#d31414]"
+                        className="w-full bg-white border border-gray-300 rounded-xl py-1.5 ltr:pl-8 ltr:pr-3 rtl:pr-8 rtl:pl-3 text-xs font-semibold focus:outline-none focus:border-[#8B2220]"
                       />
                     </div>
                   </div>
@@ -430,7 +430,7 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
                         placeholder={isAr ? 'مثال: 92347955' : 'e.g. 92347955'}
-                        className="w-full bg-white border border-gray-300 rounded-xl py-1.5 ltr:pl-8 ltr:pr-3 rtl:pr-8 rtl:pl-3 text-xs font-semibold focus:outline-none focus:border-[#d31414]"
+                        className="w-full bg-white border border-gray-300 rounded-xl py-1.5 ltr:pl-8 ltr:pr-3 rtl:pr-8 rtl:pl-3 text-xs font-semibold focus:outline-none focus:border-[#8B2220]"
                       />
                     </div>
                   </div>
@@ -454,7 +454,7 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
                               ? isAr ? 'طاولة رقم 5' : 'Table #5'
                               : isAr ? 'دارسيت، مسقط، بناية...' : 'Darsait, Muscat, Building...'
                           }
-                          className="w-full bg-white border border-gray-300 rounded-xl py-1.5 ltr:pl-8 ltr:pr-3 rtl:pr-8 rtl:pl-3 text-xs font-semibold focus:outline-none focus:border-[#d31414]"
+                          className="w-full bg-white border border-gray-300 rounded-xl py-1.5 ltr:pl-8 ltr:pr-3 rtl:pr-8 rtl:pl-3 text-xs font-semibold focus:outline-none focus:border-[#8B2220]"
                         />
                       </div>
                     </div>
@@ -470,7 +470,7 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
                       value={orderNotes}
                       onChange={(e) => setOrderNotes(e.target.value)}
                       placeholder={isAr ? 'بدون شطة، زيادة طحينة...' : 'Extra sauce, no chili...'}
-                      className="w-full bg-white border border-gray-300 rounded-xl py-1.5 px-3 text-xs font-semibold focus:outline-none focus:border-[#d31414]"
+                      className="w-full bg-white border border-gray-300 rounded-xl py-1.5 px-3 text-xs font-semibold focus:outline-none focus:border-[#8B2220]"
                     />
                   </div>
 
@@ -483,18 +483,18 @@ export const EasyOrderCartDrawer: React.FC<EasyOrderCartDrawerProps> = ({
                 </div>
 
                 {/* Price Breakdown */}
-                <div className="bg-gray-50 p-3 rounded-xl border border-gray-200/80 space-y-1.5 text-xs">
+                <div className="bg-[#FFF9EF] p-3 rounded-xl border border-[#E8D8B5] space-y-1.5 text-xs">
                   <div className="flex items-center justify-between text-gray-600">
                     <span>{isAr ? 'المجموع الفرعي' : 'Subtotal'}</span>
                     <span className="font-mono font-bold">{formatBaisaToOmr(totalBaisa, lang)}</span>
                   </div>
                   <div className="flex items-center justify-between text-gray-600">
                     <span>{isAr ? 'خدمة التحضير والتجهيز' : 'Packaging & Service'}</span>
-                    <span className="text-emerald-600 font-bold">{isAr ? 'مجاني' : 'Free'}</span>
+                    <span className="text-emerald-700 font-bold">{isAr ? 'مجاني' : 'Free'}</span>
                   </div>
-                  <div className="border-t border-gray-200 pt-1.5 flex items-center justify-between font-black text-sm text-gray-950">
+                  <div className="border-t border-[#E8D8B5] pt-1.5 flex items-center justify-between font-black text-sm text-gray-950">
                     <span>{isAr ? 'الإجمالي النهائي' : 'Grand Total'}</span>
-                    <span className="font-mono text-base text-[#d31414]">
+                    <span className="font-mono text-base text-[#8B2220]">
                       {formatBaisaToOmr(totalBaisa, lang)}
                     </span>
                   </div>

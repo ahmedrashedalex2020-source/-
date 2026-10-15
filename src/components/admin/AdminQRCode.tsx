@@ -11,9 +11,8 @@ interface AdminQRCodeProps {
 
 export const AdminQRCode: React.FC<AdminQRCodeProps> = ({ settings, lang }) => {
   const isAr = lang === 'ar';
-  const [targetUrl, setTargetUrl] = useState(
-    settings.publicMenuUrl || (typeof window !== 'undefined' ? window.location.origin : '')
-  );
+  const FIXED_MENU_URL = 'https://kebdaaskndrany.ct.ws';
+  const [targetUrl, setTargetUrl] = useState(FIXED_MENU_URL);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const printAreaRef = useRef<HTMLDivElement>(null);
@@ -24,7 +23,7 @@ export const AdminQRCode: React.FC<AdminQRCodeProps> = ({ settings, lang }) => {
         width: 600,
         margin: 2,
         color: {
-          dark: '#392A23',
+          dark: '#000000',
           light: '#FFFFFF',
         },
       })
@@ -52,69 +51,69 @@ export const AdminQRCode: React.FC<AdminQRCodeProps> = ({ settings, lang }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 text-[#ededed] font-['Cairo',sans-serif]">
       {/* Header */}
-      <div className="bg-white p-5 rounded-2xl border border-[#E8D8B5]">
-        <h2 className="text-xl font-black text-[#392A23] flex items-center gap-2">
-          <QrIcon className="w-5 h-5 text-[#A1312E]" />
-          <span>{isAr ? 'إدارة وطباعة رمز الاستجابة السريعة (QR Code)' : 'QR Code Management'}</span>
+      <div className="bg-[#141414] p-4 sm:p-5 rounded-[12px] border border-[#222222] shadow-sm">
+        <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+          <QrIcon className="w-5 h-5 text-[#00c853]" />
+          <span>{isAr ? 'رمز الاستجابة السريعة (QR Code) للمنيو' : 'Menu QR Code'}</span>
         </h2>
-        <p className="text-xs text-[#755947] mt-0.5">
+        <p className="text-xs text-[#888888] mt-1">
           {isAr
-            ? 'توليد وطباعة بطاقات QR لطاولات المطعم لتمكين الزبائن من مسح القائمة مباشرة على هواتفهم'
+            ? 'توليد وطباعة بطاقات QR لطاولات المطعم لتمكين الزبائن من مسح القائمة مباشرة وفتح المتجر الإلكتروني'
             : 'Generate high-resolution printable table QR codes for customer mobile devices'}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* URL Settings & Controls */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E8D8B5] space-y-4">
-          <h3 className="text-sm font-bold text-[#392A23]">
+        <div className="bg-[#141414] p-4 sm:p-5 rounded-[12px] border border-[#222222] space-y-4 shadow-sm">
+          <h3 className="text-sm font-black text-white">
             {isAr ? 'وجهة رابط القائمة الإلكترونية' : 'Public Menu Destination URL'}
           </h3>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-[#755947]">
-              {isAr ? 'الرابط المستهدف للمسح' : 'Menu URL to encode in QR'}
+            <label className="text-xs font-bold text-[#888888]">
+              {isAr ? 'الرابط المستهدف للمسح' : 'Target Menu URL'}
             </label>
             <div className="flex items-center gap-2">
               <input
                 type="url"
                 value={targetUrl}
                 onChange={(e) => setTargetUrl(e.target.value)}
-                className="flex-1 bg-[#FFF9EF] border border-[#E8D8B5] rounded-xl p-2.5 text-xs font-mono text-[#392A23] outline-hidden focus:border-[#A1312E]"
+                className="flex-1 bg-[#0e0e0e] border border-[#282828] focus:border-[#00c853] rounded-xl p-2.5 text-xs font-mono text-white outline-none"
               />
               <button
                 onClick={handleCopyUrl}
-                className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition"
+                className="p-2.5 bg-[#1c1c1c] hover:bg-[#252525] text-white border border-[#282828] rounded-xl transition cursor-pointer"
                 title={isAr ? 'نسخ الرابط' : 'Copy link'}
               >
-                {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-4 h-4 text-[#00c853]" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-[#777777]">
               {isAr
                 ? 'يتم تحديث رمز QR تلقائياً عند تغيير الرابط أعلاه.'
                 : 'QR code updates automatically as URL changes.'}
             </p>
           </div>
 
-          <div className="pt-4 border-t border-[#E8D8B5] flex flex-wrap gap-3">
+          <div className="pt-3 border-t border-[#1f1f1f] flex flex-wrap gap-2.5">
             <button
               onClick={handleDownloadPng}
               disabled={!qrDataUrl}
-              className="flex items-center gap-2 bg-[#A1312E] hover:bg-[#862724] text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-xs"
+              className="flex items-center gap-2 bg-[#00c853] hover:bg-[#00b34a] text-black px-4 py-2.5 rounded-xl text-xs font-black transition cursor-pointer"
             >
               <Download className="w-4 h-4" />
-              <span>{isAr ? 'تحميل صورة QR بدقة عالية (PNG)' : 'Download QR Image (PNG)'}</span>
+              <span>{isAr ? 'تحميل صورة QR (PNG)' : 'Download QR Image'}</span>
             </button>
 
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 bg-[#392A23] hover:bg-[#201713] text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-xs"
+              className="flex items-center gap-2 bg-[#1c1c1c] hover:bg-[#252525] text-white border border-[#282828] px-4 py-2.5 rounded-xl text-xs font-black transition cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>{isAr ? 'طباعة بطاقة الطاولة المجهزة' : 'Print Table Stand Poster'}</span>
+              <span>{isAr ? 'طباعة بوستر الطاولة' : 'Print Table Stand'}</span>
             </button>
           </div>
         </div>
@@ -123,41 +122,48 @@ export const AdminQRCode: React.FC<AdminQRCodeProps> = ({ settings, lang }) => {
         <div className="flex justify-center">
           <div
             ref={printAreaRef}
-            className="w-full max-w-sm bg-[#FFF9EF] p-6 rounded-3xl border-4 border-[#C58D38] shadow-xl text-center space-y-4 print:border-none print:shadow-none"
+            className="w-full max-w-sm bg-[#141414] p-6 rounded-[16px] border-2 border-[#282828] shadow-xl text-center space-y-4 print:bg-white print:text-black print:border-none"
           >
             {/* Brand Header */}
             <div className="flex justify-center">
-              <BrandLogo size="lg" />
+              <BrandLogo size="lg" lightMode={true} />
             </div>
 
-            <div className="border-y border-[#E8D8B5] py-2">
-              <span className="text-xs font-extrabold text-[#A1312E] block">
-                {isAr ? 'امسح الرمز لتصفح قائمة الطعام' : 'SCAN TO VIEW OUR DIGITAL MENU'}
+            <div className="border-y border-[#222222] py-2">
+              <span className="text-xs font-black text-[#00c853] block">
+                {isAr ? 'امسح الرمز لتصفح قائمة الطعام والطلب' : 'SCAN TO VIEW MENU & ORDER'}
               </span>
-              <span className="text-[10px] text-[#755947] font-semibold">
-                {isAr ? 'كبدة إسكندراني • مشاوي • شاورما • عيوش' : 'Alexandrian Liver • Grills • Shawarma'}
+              <span className="text-[10px] text-[#888888] font-bold">
+                {isAr ? 'كبدة إسكندراني • مشاوي • شاورما • حواوشي' : 'Alexandrian Liver • Grills • Shawarma'}
               </span>
             </div>
 
             {/* QR Code Container */}
-            <div className="bg-white p-4 rounded-2xl border-2 border-[#E8D8B5] shadow-xs inline-block mx-auto">
+            <div className="bg-white p-3 rounded-2xl border-2 border-[#222222] shadow-sm inline-block mx-auto">
               {qrDataUrl ? (
                 <img
                   src={qrDataUrl}
                   alt="Restaurant Menu QR Code"
-                  className="w-48 h-48 mx-auto"
+                  className="w-44 h-44 mx-auto"
                 />
               ) : (
-                <div className="w-48 h-48 flex items-center justify-center text-xs text-gray-400">
+                <div className="w-44 h-44 flex items-center justify-center text-xs text-black">
                   {isAr ? 'جاري توليد الرمز...' : 'Generating QR...'}
                 </div>
               )}
             </div>
 
+            {/* Target Menu URL */}
+            <div className="bg-[#0e0e0e] print:bg-gray-100 py-1.5 px-3 rounded-xl border border-[#222222] print:border-gray-300">
+              <span className="text-xs font-mono font-bold text-[#00c853] print:text-black">
+                {targetUrl}
+              </span>
+            </div>
+
             {/* Address & Meta */}
-            <div className="text-[11px] text-[#755947] font-bold space-y-1">
+            <div className="text-[11px] text-[#888888] font-bold space-y-1">
               <p>📍 {settings.addressAr}</p>
-              <p className="text-[#A1312E]">📞 {settings.phone} • 💬 {settings.whatsapp}</p>
+              <p className="text-white">📞 {settings.phone} • 💬 {settings.whatsapp}</p>
             </div>
           </div>
         </div>

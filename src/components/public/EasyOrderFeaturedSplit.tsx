@@ -39,13 +39,13 @@ export const EasyOrderFeaturedSplit: React.FC<EasyOrderFeaturedSplitProps> = ({
       {/* Centered Big Headline "الأكثر مبيعاً" */}
       <div className="text-center mb-4 sm:mb-6">
         <div className="inline-flex items-center gap-2 mb-1">
-          <Sparkles className="w-5 h-5 text-[#d31414] fill-[#d31414]" />
-          <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+          <Sparkles className="w-5 h-5 text-[#EEA323] fill-[#EEA323]" />
+          <h3 className="text-xl sm:text-2xl font-black text-[#261309] font-['Cairo'] tracking-tight">
             {isAr ? 'الأكثر مبيعاً وطلباً' : 'Best Sellers & Signature Feasts'}
           </h3>
-          <Sparkles className="w-5 h-5 text-[#d31414] fill-[#d31414]" />
+          <Sparkles className="w-5 h-5 text-[#B81D22] fill-[#B81D22]" />
         </div>
-        <p className="text-xs sm:text-sm text-gray-500 font-semibold max-w-md mx-auto">
+        <p className="text-xs sm:text-sm text-[#5A3821] font-bold max-w-md mx-auto">
           {isAr
             ? 'أطباق وصواني كبدة إسكندراني المميزة الأكثر إقبالاً بتتبيلتنا السرية'
             : 'Most popular customer favorites and signature Alexandrian platters'}
@@ -57,7 +57,7 @@ export const EasyOrderFeaturedSplit: React.FC<EasyOrderFeaturedSplitProps> = ({
         {/* Category Highlight Banner (Right side in RTL, 4 cols) */}
         <div
           onClick={() => onSelectCategory(category.id)}
-          className="lg:col-span-4 relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[220px] lg:min-h-[340px] shadow-sm cursor-pointer group flex flex-col justify-center items-center text-center p-6 border border-gray-100"
+          className="lg:col-span-4 relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[220px] lg:min-h-[340px] shadow-md cursor-pointer group flex flex-col justify-center items-center text-center p-6 border-2 border-[#C89D4B]/70"
         >
           {/* Background image */}
           <img
@@ -67,25 +67,25 @@ export const EasyOrderFeaturedSplit: React.FC<EasyOrderFeaturedSplitProps> = ({
           />
 
           {/* Dark Overlay for contrast */}
-          <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/70 to-black/85 transition-opacity group-hover:opacity-90" />
+          <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/75 to-black/90 transition-opacity group-hover:opacity-95" />
 
           {/* Content inside banner */}
           <div className="relative z-10 flex flex-col items-center">
-            <span className="text-[11px] font-black uppercase tracking-widest text-amber-300 bg-black/40 px-3 py-1 rounded-full border border-amber-300/30 mb-2">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#261309] bg-[#EEA323] px-3 py-1 rounded-full border border-amber-300 shadow-xs mb-2">
               {isAr ? 'قسم مميز' : 'Featured Section'}
             </span>
 
-            <h4 className="text-xl sm:text-2xl font-black text-white drop-shadow-md mb-1.5">
+            <h4 className="text-xl sm:text-2xl font-black text-[#FAF1DC] drop-shadow-md mb-1.5 font-['Cairo']">
               {isAr ? category.nameAr : category.nameEn}
             </h4>
 
-            <span className="text-xs sm:text-sm text-gray-200 font-medium mb-4">
+            <span className="text-xs sm:text-sm text-[#D7B77C] font-semibold mb-4">
               {items.length} {isAr ? 'وجبة شهية متوفرة' : 'dishes available'}
             </span>
 
             <button
               type="button"
-              className="inline-flex items-center gap-2 bg-transparent hover:bg-white hover:text-gray-900 text-white font-black px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-white transition shadow-sm active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-2 bg-[#2B160C]/60 hover:bg-[#EEA323] hover:text-[#2B160C] text-[#EEA323] font-black px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-[#EEA323] transition shadow-sm active:scale-95 cursor-pointer"
             >
               <span>{isAr ? 'عرض الكل' : 'View All'}</span>
               {isAr ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}

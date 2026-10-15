@@ -13,10 +13,7 @@ import {
   Sparkles,
   Save,
   CheckCircle2,
-  DollarSign,
   Utensils,
-  Layers,
-  ArrowUpDown,
   AlertCircle,
 } from 'lucide-react';
 
@@ -64,9 +61,9 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const categoryMap = new Map(categories.map((c) => [c.id, c.nameAr]));
+  const categoryMap = new Map(categories.map((c) => [c.id, isAr ? c.nameAr : c.nameEn]));
 
-  // Inline Price Edit Handlers
+  // Inline Quick Price Edit Handlers
   const handleStartPriceEdit = (item: MenuItem) => {
     setEditingPriceId(item.id);
     setTempPriceOmr((item.basePriceBaisa / 1000).toFixed(3));
@@ -80,7 +77,7 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
   const handleSavePriceEdit = async (item: MenuItem) => {
     const parsed = parseFloat(tempPriceOmr);
     if (isNaN(parsed) || parsed < 0) {
-      showToast('❌ من فضلك اكتب سعر صحيح بالريال العماني يا فندم (مثال: 0.500 أو 1.200)');
+      showToast(isAr ? 'يرجى كتابة سعر صحيح بالريال العماني' : 'Invalid price');
       return;
     }
 
@@ -97,10 +94,9 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
       await onUpdateItemDirect(updated);
     }
     setEditingPriceId(null);
-    showToast(`تمام يا باشا! تم تعديل سعر "${item.nameAr}" لـ ${parsed.toFixed(3)} ر.ع وتحدث في القائمة العامة فوراً`);
+    showToast(`تم تعديل سعر "${item.nameAr}" لـ ${parsed.toFixed(3)} ر.ع`);
   };
 
-  // Inline Category Change Handler
   const handleQuickCategoryChange = async (item: MenuItem, newCatId: string) => {
     const updated: MenuItem = {
       ...item,
@@ -111,10 +107,9 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
       await onUpdateItemDirect(updated);
     }
     const catName = categoryMap.get(newCatId) || newCatId;
-    showToast(`اتنقل الصنف "${item.nameAr}" لقسم "${catName}" بنجاح`);
+    showToast(`تم نقل "${item.nameAr}" لقسم "${catName}"`);
   };
 
-  // Inline Featured Toggle
   const handleToggleFeatured = async (item: MenuItem) => {
     const updated: MenuItem = {
       ...item,
@@ -124,7 +119,7 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
     if (onUpdateItemDirect) {
       await onUpdateItemDirect(updated);
     }
-    showToast(updated.isFeatured ? `تم تمييز صنف "${item.nameAr}" كطبق مميز بالمنيو!` : `تم إلغاء التمييز لصنف "${item.nameAr}"`);
+    showToast(updated.isFeatured ? `تم تمييز "${item.nameAr}" كطبق مميز` : `إلغاء التمييز`);
   };
 
   // Filter & Sort
@@ -151,77 +146,76 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
       return matchesSearch && matchesCategory && matchesStatus;
     })
     .sort((a, b) => {
-      if (sortBy === 'name') {
-        return a.nameAr.localeCompare(b.nameAr);
-      }
-      if (sortBy === 'priceAsc') {
-        return a.basePriceBaisa - b.basePriceBaisa;
-      }
-      if (sortBy === 'priceDesc') {
-        return b.basePriceBaisa - a.basePriceBaisa;
-      }
+      if (sortBy === 'name') return a.nameAr.localeCompare(b.nameAr);
+      if (sortBy === 'priceAsc') return a.basePriceBaisa - b.basePriceBaisa;
+      if (sortBy === 'priceDesc') return b.basePriceBaisa - a.basePriceBaisa;
       return a.displayOrder - b.displayOrder;
     });
 
   const handleDeleteConfirm = (item: MenuItem) => {
-    if (window.confirm(`يا باشا هل أنت متأكد من مسح صنف "${item.nameAr}" نهائياً من قاعدة البيانات؟`)) {
+    if (window.confirm(isAr ? `هل أنت متأكد من حذف صنف "${item.nameAr}" نهائياً؟` : 'Delete item?')) {
       onDeleteItem(item.id, item.nameAr);
-      showToast(`اتمسح صنف "${item.nameAr}" بنجاح`);
+      showToast(isAr ? `تم حذف "${item.nameAr}"` : 'Item deleted');
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 text-[#ededed] font-['Cairo',sans-serif]">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 start-1/2 -translate-x-1/2 z-50 bg-[#392A23] text-white px-6 py-3.5 rounded-2xl shadow-2xl border-2 border-[#C58D38] flex items-center gap-3 animate-in fade-in slide-in-from-top duration-300">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+        <div className="fixed top-16 start-1/2 -translate-x-1/2 z-50 bg-[#1c1c1c] text-[#00c853] px-5 py-3 rounded-xl shadow-2xl border border-[#00c853]/40 flex items-center gap-2.5 animate-in fade-in slide-in-from-top duration-300">
+          <CheckCircle2 className="w-4 h-4 text-[#00c853] shrink-0" />
           <span className="text-xs sm:text-sm font-bold">{toastMessage}</span>
         </div>
       )}
 
       {/* Top Banner & Quick Add */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-[#E8D8B5] shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#141414] p-4 sm:p-5 rounded-[12px] border border-[#222222] shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-red-100 text-[#A1312E]">
-              <Utensils className="w-5 h-5" />
+            <span className="p-2 rounded-xl bg-[#00c853]/15 text-[#00c853] border border-[#00c853]/30">
+              <Utensils className="w-4 h-4" />
             </span>
-            <h2 className="text-xl sm:text-2xl font-black text-[#392A23]">
-              لوحة التحكم الاحترافية في وجبات وقائمة الطعام
+            <h2 className="text-lg sm:text-xl font-black text-white">
+              {isAr ? 'إدارة وجبات ومنتجات المنيو' : 'Menu Items Management'}
             </h2>
+            <span className="text-[11px] bg-[#1c1c1c] text-[#888888] px-2.5 py-0.5 rounded-full font-bold border border-[#262626]">
+              {items.length} {isAr ? 'صنف مسجل' : 'items'}
+            </span>
           </div>
-          <p className="text-xs text-[#755947] mt-1">
-            عدّل الأسعار والأصناف مباشرة بنقرة واحدة — كل تغيير بينزل فوراً على قائمة الزباين
+          <p className="text-xs text-[#888888] mt-1">
+            {isAr
+              ? 'تعديل الأسعار والأصناف فوراً مع الحفظ التلقائي في قاعدة البيانات وسيرفرات المنيو'
+              : 'Edit prices and menu items with instant real-time synchronization'}
           </p>
         </div>
 
         <button
           onClick={onOpenAddModal}
-          className="flex items-center justify-center gap-2 bg-[#A1312E] hover:bg-[#862724] text-white px-5 py-3 rounded-2xl text-xs sm:text-sm font-black transition shadow-md hover:scale-102"
+          className="flex items-center justify-center gap-2 bg-[#00c853] hover:bg-[#00b34a] text-black px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition cursor-pointer shadow-md active:scale-95"
         >
-          <Plus className="w-5 h-5" />
-          <span>إضافة وجبة جديدة</span>
+          <Plus className="w-4 h-4 stroke-[3]" />
+          <span>{isAr ? 'إضافة وجبة جديدة' : 'Add Item'}</span>
         </button>
       </div>
 
       {/* Quick Search & Filter Console */}
-      <div className="bg-white p-4 rounded-3xl border border-[#E8D8B5] space-y-3 shadow-xs">
+      <div className="bg-[#141414] p-4 rounded-[12px] border border-[#222222] space-y-3 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           {/* Search bar */}
           <div className="relative md:col-span-5">
-            <Search className="w-4 h-4 absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="w-4 h-4 absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 text-[#666666]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ابحث باسم الوجبة، الكبدة، الشاورما، المشاوي..."
-              className="w-full bg-[#FFF9EF] border border-[#E8D8B5] focus:border-[#A1312E] rounded-2xl ltr:pl-9 ltr:pr-3 rtl:pr-9 rtl:pl-3 py-2.5 text-xs font-bold text-[#392A23] outline-hidden"
+              placeholder={isAr ? 'ابحث باسم الوجبة، الكبدة، الشاورما، المشاوي...' : 'Search dish name...'}
+              className="w-full bg-[#0e0e0e] border border-[#222222] focus:border-[#00c853] rounded-xl ltr:pl-9 ltr:pr-3 rtl:pr-9 rtl:pl-3 py-2.5 text-xs font-bold text-white placeholder-[#555555] outline-none"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
+                className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-[#888888] hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -233,7 +227,7 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full bg-[#FFF9EF] border border-[#E8D8B5] focus:border-[#A1312E] rounded-2xl px-3 py-2.5 text-xs font-bold text-[#392A23] outline-hidden cursor-pointer"
+              className="w-full bg-[#0e0e0e] border border-[#222222] focus:border-[#00c853] rounded-xl px-3 py-2.5 text-xs font-bold text-[#cccccc] outline-none cursor-pointer"
             >
               <option value="all">كل الأقسام ({items.length} صنف)</option>
               {categories.map((c) => (
@@ -249,7 +243,7 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
             <select
               value={selectedStatusFilter}
               onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="w-full bg-[#FFF9EF] border border-[#E8D8B5] focus:border-[#A1312E] rounded-2xl px-3 py-2.5 text-xs font-bold text-[#392A23] outline-hidden cursor-pointer"
+              className="w-full bg-[#0e0e0e] border border-[#222222] focus:border-[#00c853] rounded-xl px-3 py-2.5 text-xs font-bold text-[#cccccc] outline-none cursor-pointer"
             >
               <option value="all">كل الحالات</option>
               <option value="available">المتوفر فقط</option>
@@ -264,9 +258,9 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full bg-[#FFF9EF] border border-[#E8D8B5] focus:border-[#A1312E] rounded-2xl px-3 py-2.5 text-xs font-bold text-[#392A23] outline-hidden cursor-pointer"
+              className="w-full bg-[#0e0e0e] border border-[#222222] focus:border-[#00c853] rounded-xl px-3 py-2.5 text-xs font-bold text-[#cccccc] outline-none cursor-pointer"
             >
-              <option value="order">ترتيب القائمة الأصلي</option>
+              <option value="order">ترتيب القائمة</option>
               <option value="name">أبجدياً (أ - ي)</option>
               <option value="priceAsc">السعر: من الأقل للأعلى</option>
               <option value="priceDesc">السعر: من الأعلى للأقل</option>
@@ -275,37 +269,36 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
         </div>
 
         {/* Quick count indicator */}
-        <div className="flex items-center justify-between text-[11px] text-[#755947] font-bold px-2 pt-1 border-t border-[#E8D8B5]/40">
+        <div className="flex items-center justify-between text-[11px] text-[#777777] font-bold px-1 pt-1 border-t border-[#1f1f1f]">
           <span>
-            معروض حالياً: <strong className="text-[#A1312E]">{filteredItems.length}</strong> من أصل {items.length} صنف
+            معروض حالياً: <strong className="text-white">{filteredItems.length}</strong> من أصل {items.length} صنف
           </span>
-          <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-            ✓ التعديل السريع للأسعار مفعل بالجدول (اضغط على أي سعر لتغييره فوراً)
+          <span className="text-[#00c853]">
+            ✓ التعديل السريع للأسعار مفعل (اضغط على أي سعر لتغييره فوراً)
           </span>
         </div>
       </div>
 
       {/* Main Operational Items Table */}
-      <div className="bg-white rounded-3xl border border-[#E8D8B5] overflow-hidden shadow-xs">
+      <div className="bg-[#141414] rounded-[12px] border border-[#222222] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-start">
-            <thead className="bg-[#FFF9EF] border-b border-[#E8D8B5] text-[#755947] font-black">
+            <thead className="bg-[#1a1a1a] border-b border-[#222222] text-[#888888] font-black">
               <tr>
-                <th className="p-3.5 text-center w-12">#</th>
-                <th className="p-3.5 text-start min-w-[200px]">الصنف والاسم</th>
-                <th className="p-3.5 text-start min-w-[150px]">القسم</th>
-                <th className="p-3.5 text-start min-w-[160px]">
+                <th className="p-3 text-center w-12">#</th>
+                <th className="p-3 text-start min-w-[200px]">الصنف والاسم</th>
+                <th className="p-3 text-start min-w-[150px]">القسم</th>
+                <th className="p-3 text-start min-w-[160px]">
                   السعر بالريال (OMR)
-                  <span className="block text-[10px] font-normal text-emerald-700">اضغط لتعديل السعر</span>
                 </th>
-                <th className="p-3.5 text-center">الأحجام المتعددة</th>
-                <th className="p-3.5 text-center">التوفر بالمطعم</th>
-                <th className="p-3.5 text-center">الظهور بالمنيو</th>
-                <th className="p-3.5 text-center">مميز</th>
-                <th className="p-3.5 text-end min-w-[130px]">إجراءات</th>
+                <th className="p-3 text-center">الأحجام</th>
+                <th className="p-3 text-center">التوفر</th>
+                <th className="p-3 text-center">الظهور بالمتجر</th>
+                <th className="p-3 text-center">مميز</th>
+                <th className="p-3 text-end min-w-[130px]">إجراءات</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E8D8B5]/50">
+            <tbody className="divide-y divide-[#222222]">
               {filteredItems.map((item, idx) => {
                 const isPriceEditing = editingPriceId === item.id;
                 const formattedPrice = formatBaisaToOmr(item.basePriceBaisa, 'ar');
@@ -313,46 +306,41 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
                 return (
                   <tr
                     key={item.id}
-                    className={`hover:bg-[#FFF9EF]/60 transition ${
-                      !item.isAvailable ? 'bg-gray-50/70 opacity-80' : ''
+                    className={`hover:bg-[#1a1a1a] transition ${
+                      !item.isAvailable ? 'opacity-70 bg-[#111111]' : ''
                     }`}
                   >
                     {/* Index */}
-                    <td className="p-3.5 text-center font-mono font-bold text-gray-400">
+                    <td className="p-3 text-center font-mono font-bold text-[#555555]">
                       {idx + 1}
                     </td>
 
                     {/* Name & Subtitle */}
-                    <td className="p-3.5">
+                    <td className="p-3">
                       <div className="flex items-start gap-2">
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="font-black text-[#392A23] text-sm">
+                            <span className="font-black text-white text-sm">
                               {item.nameAr}
                             </span>
                             {item.isFeatured && (
-                              <Sparkles className="w-3.5 h-3.5 text-[#C58D38] fill-[#C58D38] shrink-0" />
+                              <Sparkles className="w-3.5 h-3.5 text-[#ffb300] fill-[#ffb300] shrink-0" />
                             )}
                           </div>
-                          <span className="text-[11px] font-semibold text-[#755947]/70 block font-['Inter']">
+                          <span className="text-[11px] font-semibold text-[#777777] block font-['Inter']">
                             {item.nameEn}
                           </span>
-                          {item.portionDetailsAr && (
-                            <span className="text-[10px] text-[#A1312E] bg-red-50 border border-red-100 px-1.5 py-0.5 rounded-md mt-1 inline-block">
-                              {item.portionDetailsAr}
-                            </span>
-                          )}
                         </div>
                       </div>
                     </td>
 
                     {/* Category Selector Dropdown */}
-                    <td className="p-3.5">
+                    <td className="p-3">
                       <select
                         value={item.categoryId}
                         onChange={(e) => handleQuickCategoryChange(item, e.target.value)}
-                        className="bg-[#FFF9EF] hover:bg-white border border-[#E8D8B5] hover:border-[#A1312E] rounded-xl px-2 py-1.5 text-xs font-bold text-[#392A23] outline-hidden cursor-pointer"
-                        title="تغيير القسم فوراً"
+                        className="bg-[#0e0e0e] hover:bg-[#1c1c1c] border border-[#282828] hover:border-[#00c853] rounded-lg px-2 py-1 text-xs font-bold text-white outline-none cursor-pointer"
+                        title="تغيير القسم"
                       >
                         {categories.map((c) => (
                           <option key={c.id} value={c.id}>
@@ -362,8 +350,8 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
                       </select>
                     </td>
 
-                    {/* Price Cell with One-Click Inline Edit */}
-                    <td className="p-3.5">
+                    {/* Price Cell with Inline Edit */}
+                    <td className="p-3">
                       {isPriceEditing ? (
                         <div className="flex items-center gap-1.5 animate-in fade-in">
                           <input
@@ -376,155 +364,147 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
                               if (e.key === 'Enter') handleSavePriceEdit(item);
                               if (e.key === 'Escape') handleCancelPriceEdit();
                             }}
-                            className="w-24 bg-white border-2 border-[#A1312E] rounded-xl p-1.5 text-xs font-black text-[#A1312E] outline-hidden text-center shadow-xs"
+                            className="w-24 bg-[#0e0e0e] border-2 border-[#00c853] rounded-lg p-1.5 text-xs font-black text-[#00c853] outline-none text-center"
                             autoFocus
                           />
                           <button
                             onClick={() => handleSavePriceEdit(item)}
-                            className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs transition"
-                            title="حفظ السعر فوراً (Enter)"
+                            className="p-1.5 bg-[#00c853] hover:bg-[#00b34a] text-black rounded-lg transition"
+                            title="حفظ السعر"
                           >
-                            <Check className="w-4 h-4" />
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
                           </button>
                           <button
                             onClick={handleCancelPriceEdit}
-                            className="p-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl transition"
-                            title="إلغاء (Esc)"
+                            className="p-1.5 bg-[#222222] hover:bg-[#2c2c2c] text-white rounded-lg transition"
+                            title="إلغاء"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ) : (
                         <div
                           onClick={() => handleStartPriceEdit(item)}
-                          className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FFF9EF] border border-[#C58D38]/50 hover:border-[#A1312E] hover:bg-white cursor-pointer transition shadow-2xs"
-                          title="اضغط لتعديل السعر مباشرة"
+                          className="group inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#0e0e0e] border border-[#282828] hover:border-[#00c853] cursor-pointer transition"
+                          title="اضغط لتعديل السعر"
                         >
-                          <span className="font-black text-[#A1312E] text-sm font-mono">
-                            {item.extractionStatus === 'missing_price' && item.basePriceBaisa === 0 ? (
-                              <span className="text-amber-700 text-xs font-bold">تحديد السعر ✍️</span>
-                            ) : (
-                              formattedPrice
-                            )}
+                          <span className="font-black text-[#00c853] text-sm font-mono">
+                            {formattedPrice}
                           </span>
-                          <span className="text-[10px] text-gray-400 group-hover:text-[#A1312E]">
+                          <span className="text-[10px] text-[#555555] group-hover:text-[#00c853]">
                             ✏️
                           </span>
                         </div>
                       )}
                     </td>
 
-                    {/* Variants badge */}
-                    <td className="p-3.5 text-center">
+                    {/* Variants */}
+                    <td className="p-3 text-center">
                       {item.hasVariants && item.variants && item.variants.length > 0 ? (
                         <span
                           onClick={() => onOpenEditModal(item)}
-                          className="px-2.5 py-1 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 font-bold text-[10px] cursor-pointer hover:bg-blue-100 inline-block"
-                          title="اضغط لتعديل تفاصيل وأسعار الأحجام"
+                          className="px-2 py-0.5 rounded-full bg-[#2196f3]/15 text-[#64b5f6] border border-[#2196f3]/30 font-bold text-[10px] cursor-pointer hover:bg-[#2196f3]/25 inline-block"
                         >
                           {item.variants.length} أحجام ⚙️
                         </span>
                       ) : (
-                        <span className="text-gray-400 font-semibold text-[11px]">سعر واحد</span>
+                        <span className="text-[#555555] font-semibold text-[11px]">سعر موحد</span>
                       )}
                     </td>
 
-                    {/* Stock Availability Toggle */}
-                    <td className="p-3.5 text-center">
+                    {/* Availability Toggle */}
+                    <td className="p-3 text-center">
                       <button
                         onClick={() => {
                           onToggleAvailability(item.id, !item.isAvailable);
                           showToast(
                             !item.isAvailable
-                              ? `تم تعيين "${item.nameAr}" متوفر بالمطعم`
-                              : `تم تعيين "${item.nameAr}" غير متوفر (نافذ)`
+                              ? `تم تعيين "${item.nameAr}" متوفر`
+                              : `تم تعيين "${item.nameAr}" نافذ`
                           );
                         }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer shadow-2xs ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                           item.isAvailable
-                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300'
-                            : 'bg-red-100 text-red-700 hover:bg-red-200 border border-red-300'
+                            ? 'bg-[#00c853]/15 text-[#00c853] border border-[#00c853]/30'
+                            : 'bg-[#e53935]/15 text-[#ef5350] border border-[#e53935]/30'
                         }`}
-                        title="انقر لتغيير التوفر"
                       >
-                        {item.isAvailable ? 'متوفر ✓' : 'غير متوفر ✕'}
+                        {item.isAvailable ? 'متوفر ✓' : 'نافذ ✕'}
                       </button>
                     </td>
 
-                    {/* Published in public menu toggle */}
-                    <td className="p-3.5 text-center">
+                    {/* Published Toggle */}
+                    <td className="p-3 text-center">
                       <button
                         onClick={() => {
                           onTogglePublished(item.id, !item.isPublished);
                           showToast(
                             !item.isPublished
-                              ? `تم نشر صنف "${item.nameAr}" في المنيو`
-                              : `تم إخفاء صنف "${item.nameAr}" وحفظه كمسودة`
+                              ? `تم إظهار "${item.nameAr}" في المتجر`
+                              : `تم إخفاء "${item.nameAr}"`
                           );
                         }}
-                        className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 mx-auto ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 mx-auto ${
                           item.isPublished
-                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-200'
-                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200 border border-gray-300'
+                            ? 'bg-[#2196f3]/15 text-[#64b5f6] border border-[#2196f3]/30'
+                            : 'bg-[#1c1c1c] text-[#666666] border border-[#262626]'
                         }`}
-                        title="انقر لإخفاء أو إظهار الصنف في المنيو"
                       >
                         {item.isPublished ? (
                           <>
-                            <Eye className="w-3.5 h-3.5 text-blue-600" />
-                            <span>ظاهر</span>
+                            <Eye className="w-3.5 h-3.5 text-[#64b5f6]" />
+                            <span>معروض</span>
                           </>
                         ) : (
                           <>
-                            <EyeOff className="w-3.5 h-3.5 text-gray-400" />
+                            <EyeOff className="w-3.5 h-3.5 text-[#555555]" />
                             <span>مخفي</span>
                           </>
                         )}
                       </button>
                     </td>
 
-                    {/* Featured Toggle */}
-                    <td className="p-3.5 text-center">
+                    {/* Featured */}
+                    <td className="p-3 text-center">
                       <button
                         onClick={() => handleToggleFeatured(item)}
-                        className={`p-1.5 rounded-xl transition ${
+                        className={`p-1.5 rounded-lg transition cursor-pointer ${
                           item.isFeatured
-                            ? 'text-[#C58D38] bg-amber-50 hover:bg-amber-100'
-                            : 'text-gray-300 hover:text-amber-500'
+                            ? 'text-[#ffb300] bg-[#ffb300]/15'
+                            : 'text-[#444444] hover:text-[#ffb300]'
                         }`}
-                        title="تمييز كطبق رئيسي مميز"
+                        title="مميز"
                       >
-                        <Sparkles className={`w-4 h-4 ${item.isFeatured ? 'fill-[#C58D38]' : ''}`} />
+                        <Sparkles className={`w-4 h-4 ${item.isFeatured ? 'fill-[#ffb300]' : ''}`} />
                       </button>
                     </td>
 
                     {/* Actions */}
-                    <td className="p-3.5 text-end">
+                    <td className="p-3 text-end">
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
                         <button
                           onClick={() => onOpenEditModal(item)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition text-xs font-black shadow-xs cursor-pointer hover:scale-102"
-                          title="تعديل تفصيلي كامل للصنف والأسعار والأحجام"
+                          className="flex items-center gap-1 px-2.5 py-1 bg-[#1c1c1c] hover:bg-[#252525] text-white rounded-lg transition text-xs font-bold border border-[#2b2b2b] cursor-pointer"
                         >
-                          <Edit className="w-3.5 h-3.5" />
-                          <span>تعديل ✏️</span>
+                          <Edit className="w-3 h-3 text-[#00c853]" />
+                          <span>تعديل</span>
                         </button>
 
                         <button
                           onClick={() => {
                             onDuplicateItem(item);
-                            showToast(`تم نسخ صنف "${item.nameAr}"`);
+                            showToast(`تم نسخ "${item.nameAr}"`);
                           }}
-                          className="p-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl transition cursor-pointer"
-                          title="نسخ وتكرار الصنف"
+                          className="p-1 rounded-lg bg-[#1c1c1c] text-[#888888] hover:text-white border border-[#282828] transition cursor-pointer"
+                          title="نسخ"
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
 
                         <button
                           onClick={() => handleDeleteConfirm(item)}
-                          className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition cursor-pointer"
-                          title="حذف نهائي"
+                          className="p-1 rounded-lg text-[#666666] hover:text-rose-400 hover:bg-[#1c1c1c] transition cursor-pointer"
+                          title="حذف"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -536,16 +516,16 @@ export const AdminItems: React.FC<AdminItemsProps> = ({
 
               {filteredItems.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-[#755947]">
-                    <AlertCircle className="w-8 h-8 text-[#C58D38] mx-auto mb-2 opacity-60" />
-                    <p className="font-bold text-sm">مفيش وجبات مطابقة للبحث أو الفلتر ده يا فندم</p>
+                  <td colSpan={9} className="text-center py-12 text-[#666666]">
+                    <AlertCircle className="w-8 h-8 text-[#444444] mx-auto mb-2" />
+                    <p className="font-bold text-sm text-[#aaaaaa]">لم يتم العثور على وجبات مطابقة للبحث</p>
                     <button
                       onClick={() => {
                         setSearchQuery('');
                         setSelectedCategory('all');
                         setSelectedStatusFilter('all');
                       }}
-                      className="mt-2 text-xs font-bold text-[#A1312E] underline"
+                      className="mt-2 text-xs font-bold text-[#00c853] underline cursor-pointer"
                     >
                       إعادة ضبط الفلاتر
                     </button>

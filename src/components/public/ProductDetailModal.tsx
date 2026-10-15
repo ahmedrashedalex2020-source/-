@@ -195,7 +195,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <span className="text-[10px] text-[#755947] font-semibold block uppercase">
               {isAr ? 'الإجمالي' : 'Total Price'}
             </span>
-            <span className="text-xl sm:text-2xl font-black text-[#A1312E]">
+            <span className="text-xl sm:text-2xl font-black text-[#8B2220]">
               {item.extractionStatus === 'missing_price' && currentPriceBaisa === 0
                 ? (isAr ? 'سعر قيد المراجعة' : 'Pending Price')
                 : formatBaisaToOmr(totalPriceBaisa, lang)}

@@ -27,11 +27,11 @@ export const Footer: React.FC<FooterProps> = ({
         {/* Quick meta info */}
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-[#E8D8B5]">
           <div className="flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5 text-[#D97706]" />
+            <MapPin className="w-3.5 h-3.5 text-[#C58D38]" />
             <span>{isAr ? settings.addressAr : settings.addressEn}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5 text-[#D97706]" />
+            <Clock className="w-3.5 h-3.5 text-[#C58D38]" />
             <span>{isAr ? settings.openingHoursAr : settings.openingHoursEn}</span>
           </div>
         </div>
@@ -58,14 +58,15 @@ export const Footer: React.FC<FooterProps> = ({
         </div>
 
         {/* Bottom subtle copyright & discreet admin access */}
-        <div className="pt-4 border-t border-[#755947]/40 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#A8988B]">
+        <div className="pt-5 border-t border-[#755947]/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#A8988B]">
           <p>© {new Date().getFullYear()} مطعم كبدة إسكندراني — جميع الأسعار بالريال العماني (ر.ع)</p>
           <button
             onClick={onNavigateToAdmin}
-            className="inline-flex items-center gap-1 text-[#D97706] hover:text-white transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-black/40 hover:bg-black/60 text-[#D4B57E] hover:text-white border border-[#C58D38]/40 transition cursor-pointer font-bold text-xs shadow-xs"
+            title={isAr ? 'الدخول للوحة التحكم والإدارة' : 'Admin Control Panel'}
           >
-            <Lock className="w-3 h-3" />
-            <span>{isAr ? 'لوحة تحكم الإدارة' : 'Admin CMS'}</span>
+            <Lock className="w-3.5 h-3.5 text-[#00c853]" />
+            <span>{isAr ? 'لوحة التحكم والإدارة' : 'Admin Control Panel'}</span>
           </button>
         </div>
       </div>

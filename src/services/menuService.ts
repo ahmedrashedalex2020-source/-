@@ -108,9 +108,25 @@ export async function ensureDatabaseInitialized(): Promise<void> {
         });
       } else {
         const data = settingsSnap.data() as RestaurantSettings;
+        const updates: Partial<RestaurantSettings> = {};
         if (!data.enableWhatsappOrdering) {
+          updates.enableWhatsappOrdering = true;
+        }
+        if (!data.publicMenuUrl || data.publicMenuUrl.includes('localhost') || !data.publicMenuUrl.includes('kebdaaskndrany')) {
+          updates.publicMenuUrl = 'https://kebdaaskndrany.ct.ws';
+        }
+        if (!data.adminUsername) {
+          updates.adminUsername = 'admin';
+        }
+        if (!data.adminPassword) {
+          updates.adminPassword = 'alex2024';
+        }
+        if (!data.adminPinCode) {
+          updates.adminPinCode = '1973';
+        }
+        if (Object.keys(updates).length > 0) {
           await updateDoc(doc(db, SETTINGS_COL, 'default'), {
-            enableWhatsappOrdering: true,
+            ...updates,
             updatedAt: new Date().toISOString(),
           });
         }
@@ -494,4 +510,160 @@ export function subscribeOrders(callback: (orders: CustomerOrder[]) => void): ()
     return () => {};
   }
 }
+
+/**
+ * Update Customer Order Status
+ */
+export async function updateOrderStatus(
+  orderId: string,
+  newStatus: CustomerOrder['status']
+): Promise<void> {
+  const localOrders = getLocal<CustomerOrder[]>(LS_ORDERS) || [];
+  const updatedLocal = localOrders.map((o) =>
+    o.id === orderId ? { ...o, status: newStatus } : o
+  );
+  setLocal(LS_ORDERS, updatedLocal);
+
+  try {
+    const orderRef = doc(db, ORDERS_COL, orderId);
+    await updateDoc(orderRef, { status: newStatus });
+    await logAdminAction(
+      'تحديث_حالة_طلب',
+      'import',
+      orderId,
+      `تم تحديث حالة الطلب إلى: ${newStatus}`
+    );
+  } catch (error) {
+    console.warn('Firestore updateOrderStatus error:', error);
+  }
+}
+
+/**
+ * Delete Customer Order
+ */
+export async function deleteCustomerOrder(orderId: string): Promise<void> {
+  const localOrders = getLocal<CustomerOrder[]>(LS_ORDERS) || [];
+  setLocal(LS_ORDERS, localOrders.filter((o) => o.id !== orderId));
+
+  try {
+    const orderRef = doc(db, ORDERS_COL, orderId);
+    await deleteDoc(orderRef);
+    await logAdminAction('حذف_طلب', 'import', orderId, `تم حذف الطلب رقم ${orderId}`);
+  } catch (error) {
+    console.warn('Firestore deleteCustomerOrder error:', error);
+  }
+}
+
+/**
+ * Clear all completed or cancelled orders
+ */
+export async function clearAllOrders(): Promise<void> {
+  setLocal(LS_ORDERS, []);
+  try {
+    const snapshot = await getDocs(collection(db, ORDERS_COL));
+    const batch = writeBatch(db);
+    snapshot.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+    await logAdminAction('مسح_سجل_الطلبات', 'import', 'batch', 'تم تفريغ أرشيف الطلبات بالكامل');
+  } catch (error) {
+    console.warn('Firestore clearAllOrders error:', error);
+  }
+}
+
+/**
+ * Store Analytics & Conversion Tracking
+ */
+export interface StoreAnalytics {
+  visits: number;
+  cartAdditions: number;
+  checkoutStarts: number;
+  crossSellAdditions: number;
+  lostOrders: number;
+  updatedAt?: string;
+}
+
+const ANALYTICS_COL = 'analytics';
+const ANALYTICS_DOC = 'overview';
+const LS_ANALYTICS = 'alex_liver_analytics_v1';
+
+const DEFAULT_ANALYTICS: StoreAnalytics = {
+  visits: 0,
+  cartAdditions: 0,
+  checkoutStarts: 0,
+  crossSellAdditions: 0,
+  lostOrders: 0,
+};
+
+export function subscribeAnalytics(callback: (analytics: StoreAnalytics) => void): () => void {
+  const cached = getLocal<StoreAnalytics>(LS_ANALYTICS) || DEFAULT_ANALYTICS;
+  callback(cached);
+
+  try {
+    const docRef = doc(db, ANALYTICS_COL, ANALYTICS_DOC);
+    const unsubscribe = onSnapshot(
+      docRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data() as StoreAnalytics;
+          setLocal(LS_ANALYTICS, data);
+          callback(data);
+        } else {
+          setDoc(docRef, { ...DEFAULT_ANALYTICS, updatedAt: new Date().toISOString() }).catch(() => {});
+          callback(DEFAULT_ANALYTICS);
+        }
+      },
+      (error) => {
+        console.warn('Analytics onSnapshot warning:', error);
+      }
+    );
+    return unsubscribe;
+  } catch {
+    return () => {};
+  }
+}
+
+export async function incrementAnalyticsField(field: keyof Omit<StoreAnalytics, 'updatedAt'>, amount = 1): Promise<void> {
+  const current = getLocal<StoreAnalytics>(LS_ANALYTICS) || DEFAULT_ANALYTICS;
+  const updated: StoreAnalytics = {
+    ...current,
+    [field]: (current[field] || 0) + amount,
+    updatedAt: new Date().toISOString(),
+  };
+  setLocal(LS_ANALYTICS, updated);
+
+  try {
+    const docRef = doc(db, ANALYTICS_COL, ANALYTICS_DOC);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const liveData = snap.data() as StoreAnalytics;
+      const nextVal = (liveData[field] || 0) + amount;
+      await updateDoc(docRef, { [field]: nextVal, updatedAt: new Date().toISOString() });
+    } else {
+      await setDoc(docRef, updated);
+    }
+  } catch (e) {
+    console.warn('incrementAnalyticsField failed:', e);
+  }
+}
+
+export function trackStoreVisit(): void {
+  const sessionKey = 'alex_visit_tracked_session';
+  if (!sessionStorage.getItem(sessionKey)) {
+    sessionStorage.setItem(sessionKey, '1');
+    incrementAnalyticsField('visits', 1);
+  }
+}
+
+export function trackCartAddition(): void {
+  incrementAnalyticsField('cartAdditions', 1);
+}
+
+export function trackCheckoutStart(): void {
+  incrementAnalyticsField('checkoutStarts', 1);
+}
+
+export function trackCrossSellAddition(): void {
+  incrementAnalyticsField('crossSellAdditions', 1);
+}
+
 

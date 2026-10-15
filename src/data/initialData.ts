@@ -2131,8 +2131,11 @@ export const DEFAULT_RESTAURANT_SETTINGS: RestaurantSettings = {
   openingHoursAr: 'يومياً: من ٧:٠٠ صباحاً حتى ١:٠٠ بعد منتصف الليل',
   openingHoursEn: 'Daily: 7:00 AM – 1:00 AM',
   defaultLanguage: 'ar',
-  publicMenuUrl: typeof window !== 'undefined' ? window.location.origin : '',
+  publicMenuUrl: 'https://kebdaaskndrany.ct.ws',
   enableWhatsappOrdering: true, // Activated by default for seamless customer orders
   heroTaglineAr: 'أشهى المأكولات الإسكندرية والشواء الطازج على أصوله في قلب مسقط',
   heroTaglineEn: 'Authentic Alexandrian Liver, Fresh Grills & Traditional Flavors in Muscat',
+  adminUsername: 'admin', // Default admin username
+  adminPassword: 'alex2024', // Default admin password
+  adminPinCode: '1973', // Master Secret PIN for Admin CMS
 };

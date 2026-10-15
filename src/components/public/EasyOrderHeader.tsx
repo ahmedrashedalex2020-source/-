@@ -8,8 +8,8 @@ import {
   Lock,
   X,
   MapPin,
-  Clock,
   Phone,
+  MessageCircle,
 } from 'lucide-react';
 
 interface EasyOrderHeaderProps {
@@ -65,75 +65,74 @@ export const EasyOrderHeader: React.FC<EasyOrderHeaderProps> = ({
 
   return (
     <header className="w-full select-none z-40 sticky top-0 shadow-md">
-      {/* 1. Top Announcement Bar (#c8102e) */}
-      <div className="bg-[#c8102e] text-white text-[11px] sm:text-xs py-1.5 px-3 sm:px-6 flex items-center justify-between border-b border-black/10">
-        {/* Subtle Admin Icon on one side */}
+      {/* 1. Top Announcement Bar - Weathered Antique Espresso (#261309) with Gold Border */}
+      <div className="bg-[#261309] text-[#F5E8CB] text-[11px] sm:text-xs py-1.5 px-3 sm:px-6 flex items-center justify-between border-b-2 border-[#C89D4B]">
+        {/* Language Switcher */}
         <div className="flex items-center gap-2">
           <button
-            onClick={onNavigateToAdmin}
-            className="p-1 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition"
-            title={isAr ? 'لوحة تحكم الإدارة' : 'Admin Portal'}
-            aria-label="Admin"
-          >
-            <Lock className="w-3.5 h-3.5" />
-          </button>
-          <button
             onClick={onToggleLang}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-[10px] sm:text-xs font-bold transition"
+            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-[#F5E8CB] text-[10px] sm:text-xs font-bold transition border border-[#C89D4B]/40 cursor-pointer"
             title={isAr ? 'Switch to English' : 'التحويل للعربية'}
           >
-            <Globe className="w-3 h-3" />
+            <Globe className="w-3 h-3 text-[#EEA323]" />
             <span>{isAr ? 'English' : 'عربي'}</span>
           </button>
         </div>
 
-        {/* Center: Welcome message, branches & operating hours */}
-        <div className="flex-1 text-center font-bold truncate px-2 text-white/95">
-          <span>
-            {isAr
-              ? `أهلاً بكم في مطعم كبدة إسكندراني 🇪🇬 🇴🇲 • ${settings.addressAr ? settings.addressAr.split('،')[0] : 'فرع دارسيت مسقط'} • ${settings.openingHoursAr || 'يومياً من 7:00 ص حتى 1:00 ص'}`
-              : `Welcome to Alexandrian Liver Restaurant • Darsait Branch • ${settings.openingHoursEn || 'Daily: 7:00 AM - 1:00 AM'}`}
+        {/* Center: Exact location & info from the paper menu */}
+        <div className="flex-1 text-center font-bold truncate px-2 text-[#FAF1DC]">
+          <span className="inline-flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-[#B81D22] shrink-0" />
+            <span>
+              {isAr
+                ? 'دارسيت أمام بلدية مسقط وقريب من لولو هايبر ماركت'
+                : 'Darsait in front of Muscat Municipality & close to Lulu Hypermarket'}
+            </span>
           </span>
         </div>
 
-        {/* Contact Hotline / Phone */}
-        <div className="hidden sm:flex items-center gap-1.5 font-bold">
-          <Phone className="w-3 h-3 text-amber-300" />
+        {/* Contact Badges matching paper menu: WhatsApp (79348565) & Phone (92347955) */}
+        <div className="hidden sm:flex items-center gap-3 font-bold text-xs">
           <a
-            href={`tel:${(settings.phone || '92347955').replace(/[^0-9+]/g, '')}`}
-            className="hover:underline text-amber-200"
+            href="https://wa.me/96879348565"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-mono"
+            title="WhatsApp Order"
           >
-            {settings.phone || '+968 92347955'}
+            <div className="w-4 h-4 rounded-full bg-emerald-500 text-black flex items-center justify-center">
+              <MessageCircle className="w-2.5 h-2.5 fill-black" />
+            </div>
+            <span>79348565</span>
+          </a>
+
+          <a
+            href="tel:+96892347955"
+            className="inline-flex items-center gap-1 text-[#EEA323] hover:text-amber-200 font-mono"
+            title="Call"
+          >
+            <Phone className="w-3.5 h-3.5 text-[#EEA323]" />
+            <span>92347955</span>
           </a>
         </div>
       </div>
 
-      {/* 2. Main Red Header (#d31414) */}
-      <div className="bg-[#d31414] text-white px-3 sm:px-6 py-2.5 sm:py-3">
+      {/* 2. Main Header - Aged Golden Parchment (#F8EFD8) with Authentic Paper Menu Logo */}
+      <div className="bg-[#F8EFD8] border-b-2 border-[#C89D4B] px-3 sm:px-6 py-2.5 sm:py-3 shadow-xs">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3 sm:gap-6">
-          {/* Logo on Right (RTL) */}
+          {/* Logo on Right (RTL) - Matches Paper Menu */}
           <div
-            className="flex items-center gap-2.5 cursor-pointer shrink-0"
+            className="flex items-center gap-2 cursor-pointer shrink-0"
             onClick={() => {
               onSelectCategory('all');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           >
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white p-1 shadow-sm flex items-center justify-center shrink-0">
-              <BrandLogo size="sm" showSubtitle={false} className="scale-90" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-base sm:text-lg tracking-tight text-white leading-tight font-['Cairo']">
-                {isAr ? settings.nameAr || 'كبدة إسكندراني' : settings.nameEn || 'Alexandrian Liver'}
-              </span>
-              <span className="text-[10px] text-amber-200 font-semibold uppercase tracking-wider">
-                {isAr ? 'طعم إسكندراني أصيل 🇪🇬' : 'Authentic Egyptian Flavor'}
-              </span>
-            </div>
+            <BrandLogo size="md" showSubtitle={true} />
           </div>
 
-          {/* Center Search Bar: Large, Pill-shaped with White Background */}
-          <div className="flex-1 max-w-xl relative">
+          {/* Center Search Bar: Ivory Parchment with Gold Border */}
+          <div className="flex-1 max-w-lg relative">
             <div className="relative flex items-center">
               <input
                 type="text"
@@ -141,36 +140,36 @@ export const EasyOrderHeader: React.FC<EasyOrderHeaderProps> = ({
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={
                   isAr
-                    ? 'ابحث عن صنفك المفضّل... (كبدة، سجق، مشاوي، شاورما)'
-                    : 'Search menu... (Liver, sausage, grills, shawarma)'
+                    ? 'ابحث عن وجبتك المفضلة... (كبدة إسكندراني، شاورما، مشاوي، فطائر)'
+                    : 'Search menu... (Alexandrian Liver, shawarma, grills, pastry)'
                 }
-                className="w-full bg-white text-gray-900 placeholder-gray-400 font-semibold text-xs sm:text-sm rounded-full py-2 sm:py-2.5 ltr:pl-4 ltr:pr-10 rtl:pr-4 rtl:pl-10 shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-300 transition"
+                className="w-full bg-[#FFFDF9] text-[#2B160C] placeholder-stone-500 font-bold text-xs sm:text-sm rounded-full py-2.5 sm:py-3 ltr:pl-4 ltr:pr-10 rtl:pr-4 rtl:pl-10 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#B81D22] transition border-2 border-[#D7B77C]"
               />
               {searchQuery ? (
                 <button
                   onClick={() => onSearchChange('')}
-                  className="absolute ltr:right-3 rtl:left-3 p-1 rounded-full text-gray-400 hover:text-gray-700 cursor-pointer"
+                  className="absolute ltr:right-3 rtl:left-3 p-1 rounded-full text-stone-400 hover:text-stone-700 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               ) : (
-                <div className="absolute ltr:right-3 rtl:left-3 w-7 h-7 rounded-full bg-[#d31414] text-white flex items-center justify-center shadow-xs pointer-events-none">
-                  <Search className="w-3.5 h-3.5" />
+                <div className="absolute ltr:right-3 rtl:left-3 w-8 h-8 rounded-full bg-[#B81D22] text-[#F8EFD8] flex items-center justify-center shadow-xs pointer-events-none">
+                  <Search className="w-4 h-4" />
                 </div>
               )}
             </div>
           </div>
 
-          {/* Cart Icon inside White Circle on Left */}
+          {/* Cart Icon inside Golden Button on Left */}
           <div className="shrink-0">
             <button
               onClick={onOpenCart}
-              className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white text-[#d31414] hover:bg-amber-50 active:scale-95 shadow-md flex items-center justify-center cursor-pointer transition"
+              className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#FFFDF9] text-[#B81D22] hover:bg-[#FAF0D9] active:scale-95 shadow-md flex items-center justify-center cursor-pointer transition border-2 border-[#C89D4B]"
               aria-label="View Cart"
             >
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
               {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 w-5 h-5 rounded-full bg-[#c8102e] text-white text-[11px] font-black border-2 border-white flex items-center justify-center animate-bounce">
+                <span className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#B81D22] text-[#FFF9EA] text-[11px] sm:text-xs font-black border-2 border-[#EEA323] flex items-center justify-center animate-bounce shadow-sm">
                   {totalCartCount}
                 </span>
               )}
@@ -179,8 +178,8 @@ export const EasyOrderHeader: React.FC<EasyOrderHeaderProps> = ({
         </div>
       </div>
 
-      {/* 3. Sticky Categories Navbar (White background) */}
-      <nav className="bg-white border-b border-gray-200 py-1.5 px-3 sm:px-6 shadow-2xs">
+      {/* 3. Sticky Categories Navbar (Aged Papyrus Tone with Crimson Badges) */}
+      <nav className="bg-[#F3E5C8] border-b-2 border-[#D4B57E] py-1.5 px-3 sm:px-6 shadow-xs">
         <div className="max-w-6xl mx-auto">
           <div
             ref={categoriesScrollRef}
@@ -193,8 +192,8 @@ export const EasyOrderHeader: React.FC<EasyOrderHeaderProps> = ({
               onClick={() => onSelectCategory('all')}
               className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
                 selectedCategoryId === 'all'
-                  ? 'bg-[#d31414] text-white shadow-sm ring-2 ring-[#d31414]/20 scale-102'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-[#B81D22] text-white shadow-md ring-2 ring-[#EEA323] scale-102'
+                  : 'bg-[#FFFDF7] border border-[#DEC391] text-[#2B160C] hover:bg-[#FAF0D9]'
               }`}
             >
               <span>{isAr ? 'الكل' : 'All'}</span>
@@ -202,7 +201,7 @@ export const EasyOrderHeader: React.FC<EasyOrderHeaderProps> = ({
                 className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                   selectedCategoryId === 'all'
                     ? 'bg-white/20 text-white'
-                    : 'bg-white text-gray-600'
+                    : 'bg-[#F3E5C8] text-[#5A3821] border border-[#DEC391]'
                 }`}
               >
                 {totalPublishedItems}
@@ -220,8 +219,8 @@ export const EasyOrderHeader: React.FC<EasyOrderHeaderProps> = ({
                   onClick={() => onSelectCategory(category.id)}
                   className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-[#d31414] text-white shadow-sm ring-2 ring-[#d31414]/20 scale-102'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-[#B81D22] text-white shadow-md ring-2 ring-[#EEA323] scale-102'
+                      : 'bg-[#FFFDF7] border border-[#DEC391] text-[#2B160C] hover:bg-[#FAF0D9]'
                   }`}
                 >
                   <span>{isAr ? category.nameAr : category.nameEn}</span>
@@ -230,7 +229,7 @@ export const EasyOrderHeader: React.FC<EasyOrderHeaderProps> = ({
                       className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                         isSelected
                           ? 'bg-white/20 text-white'
-                          : 'bg-white text-gray-600'
+                          : 'bg-[#F3E5C8] text-[#5A3821] border border-[#DEC391]'
                       }`}
                     >
                       {count}

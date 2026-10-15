@@ -72,6 +72,9 @@ export interface RestaurantSettings {
   enableWhatsappOrdering: boolean;
   heroTaglineAr?: string;
   heroTaglineEn?: string;
+  adminUsername?: string; // Secret username for admin CMS access (default: "admin")
+  adminPassword?: string; // Secret password for admin CMS access (default: "alex2024")
+  adminPinCode?: string; // Secret PIN code for admin CMS access (default: "1973")
   updatedAt?: string;
 }
 

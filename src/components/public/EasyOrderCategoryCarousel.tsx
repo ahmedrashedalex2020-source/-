@@ -35,23 +35,23 @@ export const EasyOrderCategoryCarousel: React.FC<EasyOrderCategoryCarouselProps>
       {/* Section Header with Navigation Arrows */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-4 bg-[#d31414] rounded-full" />
-          <h3 className="text-base sm:text-lg font-black text-gray-900">
-            {isAr ? 'الأقسام والتصنيفات' : 'Menu Categories'}
+          <div className="w-2 h-4.5 bg-[#B81D22] rounded-full shadow-xs" />
+          <h3 className="text-base sm:text-lg font-black text-[#261309] font-['Cairo']">
+            {isAr ? 'أقسام وتصنيفات الطعام' : 'Menu Categories'}
           </h3>
         </div>
 
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => scroll(isAr ? 'right' : 'left')}
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white border border-gray-200 hover:border-[#d31414] hover:text-[#d31414] shadow-xs flex items-center justify-center transition cursor-pointer text-gray-600 active:scale-95"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFFDF8] border-2 border-[#D4AA58] hover:bg-[#EEA323] hover:text-[#261309] shadow-xs flex items-center justify-center transition cursor-pointer text-[#261309] active:scale-95"
             aria-label="Previous categories"
           >
             {isAr ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
           <button
             onClick={() => scroll(isAr ? 'left' : 'right')}
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white border border-gray-200 hover:border-[#d31414] hover:text-[#d31414] shadow-xs flex items-center justify-center transition cursor-pointer text-gray-600 active:scale-95"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFFDF8] border-2 border-[#D4AA58] hover:bg-[#EEA323] hover:text-[#261309] shadow-xs flex items-center justify-center transition cursor-pointer text-[#261309] active:scale-95"
             aria-label="Next categories"
           >
             {isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -68,13 +68,13 @@ export const EasyOrderCategoryCarousel: React.FC<EasyOrderCategoryCarouselProps>
         {/* All Items Card */}
         <div
           onClick={() => onSelectCategory('all')}
-          className={`shrink-0 w-24 sm:w-28 p-2 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between group ${
+          className={`shrink-0 w-24 sm:w-28 p-2 rounded-2xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-between group shadow-xs ${
             selectedCategoryId === 'all'
-              ? 'bg-[#FFF5F5] border-[#d31414] ring-2 ring-[#d31414]/20 shadow-sm scale-102'
-              : 'bg-white border-gray-100 hover:border-gray-300 hover:shadow-xs shadow-2xs'
+              ? 'bg-[#FFF8E6] border-[#B81D22] ring-2 ring-[#EEA323] shadow-md scale-102'
+              : 'bg-[#FFFDF9] border-[#DEC495] hover:border-[#C89D4B] hover:shadow-sm'
           }`}
         >
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center p-1 mb-1.5 border border-gray-100">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-white flex items-center justify-center p-1 mb-1.5 border border-[#E5CE9F]">
             <img
               src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=200&q=80"
               alt="All items"
@@ -83,12 +83,12 @@ export const EasyOrderCategoryCarousel: React.FC<EasyOrderCategoryCarouselProps>
           </div>
           <span
             className={`text-xs sm:text-sm font-black line-clamp-1 ${
-              selectedCategoryId === 'all' ? 'text-[#d31414]' : 'text-gray-800'
+              selectedCategoryId === 'all' ? 'text-[#B81D22]' : 'text-[#261309]'
             }`}
           >
             {isAr ? 'الكل' : 'All'}
           </span>
-          <span className="text-[10px] text-gray-500 font-semibold">
+          <span className="text-[10px] text-[#6A472E] font-bold">
             {Object.values(itemCountsByCategory).reduce((a, b) => a + b, 0)} {isAr ? 'صنف' : 'items'}
           </span>
         </div>
@@ -102,13 +102,13 @@ export const EasyOrderCategoryCarousel: React.FC<EasyOrderCategoryCarouselProps>
             <div
               key={cat.id}
               onClick={() => onSelectCategory(cat.id)}
-              className={`shrink-0 w-24 sm:w-28 p-2 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between group ${
+              className={`shrink-0 w-24 sm:w-28 p-2 rounded-2xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-between group shadow-xs ${
                 isSelected
-                  ? 'bg-[#FFF5F5] border-[#d31414] ring-2 ring-[#d31414]/20 shadow-sm scale-102'
-                  : 'bg-white border-gray-100 hover:border-gray-300 hover:shadow-xs shadow-2xs'
+                  ? 'bg-[#FFF8E6] border-[#B81D22] ring-2 ring-[#EEA323] shadow-md scale-102'
+                  : 'bg-[#FFFDF9] border-[#DEC495] hover:border-[#C89D4B] hover:shadow-sm'
               }`}
             >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center p-0.5 mb-1.5 border border-gray-100">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-white flex items-center justify-center p-0.5 mb-1.5 border border-[#E5CE9F]">
                 <img
                   src={imageUrl}
                   alt={isAr ? cat.nameAr : cat.nameEn}
@@ -118,12 +118,12 @@ export const EasyOrderCategoryCarousel: React.FC<EasyOrderCategoryCarouselProps>
               </div>
               <span
                 className={`text-xs sm:text-sm font-black line-clamp-1 ${
-                  isSelected ? 'text-[#d31414]' : 'text-gray-800'
+                  isSelected ? 'text-[#B81D22]' : 'text-[#261309]'
                 }`}
               >
                 {isAr ? cat.nameAr : cat.nameEn}
               </span>
-              <span className="text-[10px] text-gray-500 font-semibold">
+              <span className="text-[10px] text-[#6A472E] font-bold">
                 {count} {isAr ? 'صنف' : 'items'}
               </span>
             </div>

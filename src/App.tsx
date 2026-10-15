@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Category, MenuItem, RestaurantSettings, CartItem, AuditLog, ProductVariant, formatBaisaToOmr } from './types/menu';
+import { Category, MenuItem, RestaurantSettings, CartItem, AuditLog, ProductVariant, CustomerOrder, formatBaisaToOmr } from './types/menu';
 import { MessageCircle, ShoppingBag, Sparkles } from 'lucide-react';
 import {
   subscribeCategories,
   subscribeMenuItems,
   subscribeSettings,
   subscribeAuditLogs,
+  subscribeOrders,
+  subscribeAnalytics,
+  trackStoreVisit,
+  trackCartAddition,
+  trackCheckoutStart,
+  StoreAnalytics,
   saveMenuItem,
   deleteMenuItem,
   toggleItemAvailability,
@@ -30,6 +36,7 @@ import { Footer } from './components/public/Footer';
 
 // Admin Components
 import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminOrders } from './components/admin/AdminOrders';
 import { AdminOverview } from './components/admin/AdminOverview';
 import { AdminItems } from './components/admin/AdminItems';
 import { AdminItemFormModal } from './components/admin/AdminItemFormModal';
@@ -42,6 +49,8 @@ import { AdminDataExchange } from './components/admin/AdminDataExchange';
 import { AdminAuditLogs } from './components/admin/AdminAuditLogs';
 import { AdminHostingGuide } from './components/admin/AdminHostingGuide';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
+import { AdminShater } from './components/admin/AdminShater';
+import { AdminMarketing } from './components/admin/AdminMarketing';
 
 function MainApp() {
   const { user, isAdmin } = useAuth();
@@ -56,6 +65,14 @@ function MainApp() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(INITIAL_MENU_ITEMS);
   const [settings, setSettings] = useState<RestaurantSettings>(DEFAULT_RESTAURANT_SETTINGS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  const [analytics, setAnalytics] = useState<StoreAnalytics>({
+    visits: 0,
+    cartAdditions: 0,
+    checkoutStarts: 0,
+    crossSellAdditions: 0,
+    lostOrders: 0,
+  });
 
   // Public Menu UI State
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
@@ -72,12 +89,35 @@ function MainApp() {
   const [isItemModalOpen, setIsItemModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
-  // Check URL path on mount (e.g. /admin)
+  // Check URL path on mount and on route change (e.g. #admin, ?admin=true, /admin)
   useEffect(() => {
-    if (window.location.pathname.includes('/admin') || window.location.hash === '#admin') {
-      setViewMode('admin');
-    }
-  }, []);
+    const checkAdminRoute = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const hasAdminParam = searchParams.get('admin') === 'true' || searchParams.get('admin') === '1';
+      const hasAdminHash = window.location.hash.toLowerCase() === '#admin';
+      const hasAdminPath = window.location.pathname.endsWith('/admin') || window.location.pathname.includes('/admin');
+
+      if (hasAdminParam || hasAdminHash || hasAdminPath) {
+        if (isAdmin) {
+          setViewMode('admin');
+        } else {
+          setIsLoginModalOpen(true);
+        }
+      } else {
+        // Record customer visit for analytics
+        trackStoreVisit();
+      }
+    };
+
+    checkAdminRoute();
+    window.addEventListener('hashchange', checkAdminRoute);
+    window.addEventListener('popstate', checkAdminRoute);
+
+    return () => {
+      window.removeEventListener('hashchange', checkAdminRoute);
+      window.removeEventListener('popstate', checkAdminRoute);
+    };
+  }, [isAdmin]);
 
   // Sync document language and dir attribute
   useEffect(() => {
@@ -85,23 +125,24 @@ function MainApp() {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   }, [lang]);
 
-  // Subscribe to Firestore collections
+  // Subscribe to Firestore collections & live metrics
   useEffect(() => {
     const unsubCats = subscribeCategories(setCategories);
     const unsubItems = subscribeMenuItems(setMenuItems);
     const unsubSettings = subscribeSettings((s) => {
       setSettings(s);
-      if (s.defaultLanguage && (s.defaultLanguage === 'ar' || s.defaultLanguage === 'en')) {
-        // preserve current or default
-      }
     });
     const unsubLogs = subscribeAuditLogs(setAuditLogs);
+    const unsubOrders = subscribeOrders(setOrders);
+    const unsubAnalytics = subscribeAnalytics(setAnalytics);
 
     return () => {
       unsubCats();
       unsubItems();
       unsubSettings();
       unsubLogs();
+      unsubOrders();
+      unsubAnalytics();
     };
   }, []);
 
@@ -116,6 +157,7 @@ function MainApp() {
     quantity: number = 1,
     openCartDrawer: boolean = false
   ) => {
+    trackCartAddition();
     const resolvedVariant =
       variant ||
       (item.hasVariants && item.variants && item.variants.length > 0
@@ -134,6 +176,7 @@ function MainApp() {
       return [...prev, { item, selectedVariant: resolvedVariant, quantity }];
     });
     if (openCartDrawer) {
+      trackCheckoutStart();
       setIsCartOpen(true);
     }
   };
@@ -284,13 +327,19 @@ function MainApp() {
 
   // Navigate to Admin Handler
   const handleNavigateToAdmin = () => {
-    setViewMode('admin');
-    window.history.pushState(null, '', '#admin');
+    window.location.hash = 'admin';
+    if (!isAdmin) {
+      setIsLoginModalOpen(true);
+    } else {
+      setViewMode('admin');
+    }
   };
 
   const handleExitAdmin = () => {
     setViewMode('public');
-    window.history.pushState(null, '', window.location.pathname);
+    if (window.location.hash === '#admin') {
+      window.history.pushState(null, '', window.location.pathname + window.location.search);
+    }
   };
 
   // Admin Item Actions with Optimistic State Updates
@@ -370,40 +419,6 @@ function MainApp() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
-      {/* 🌟 PERMANENT TOP DUAL-MODE SWITCHER BAR 🌟 */}
-      <div className="bg-[#18110D] text-white border-b-2 border-[#C58D38] px-3 sm:px-6 py-2 flex items-center justify-between flex-wrap gap-2 text-xs font-bold z-50 sticky top-0 shadow-lg">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span className="text-[#E8D8B5] font-extrabold text-xs sm:text-sm">
-            مطعم كبدة إسكندراني — دارسيت، مسقط 🇴🇲
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewMode('public')}
-            className={`px-3 py-1.5 rounded-xl font-black transition flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'public'
-                ? 'bg-[#A1312E] text-white shadow-md ring-2 ring-white scale-102'
-                : 'bg-white/10 hover:bg-white/20 text-[#E8D8B5]'
-            }`}
-          >
-            <span>📱 منيو الزبائن وسلة الطلبات</span>
-          </button>
-
-          <button
-            onClick={() => setViewMode('admin')}
-            className={`px-3 py-1.5 rounded-xl font-black transition flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'admin'
-                ? 'bg-[#C58D38] text-[#18110D] shadow-md ring-2 ring-white scale-102'
-                : 'bg-white/10 hover:bg-white/20 text-[#E8D8B5]'
-            }`}
-          >
-            <span>⚙️ لوحة التحكم الاحترافية للمطعم</span>
-          </button>
-        </div>
-      </div>
-
       {viewMode === 'admin' ? (
         /* ADMIN CMS VIEW */
         <AdminLayout
@@ -416,11 +431,17 @@ function MainApp() {
         >
           {adminTab === 'overview' && (
             <AdminOverview
-              categories={categories}
+              orders={orders}
               items={menuItems}
+              categories={categories}
+              analytics={analytics}
               onNavigateTab={setAdminTab}
               lang={lang}
             />
+          )}
+
+          {adminTab === 'orders' && (
+            <AdminOrders lang={lang} />
           )}
 
           {adminTab === 'items' && (
@@ -444,6 +465,22 @@ function MainApp() {
               items={menuItems}
               onSaveCategory={handleSaveCategory}
               onDeleteCategory={handleDeleteCategory}
+              lang={lang}
+            />
+          )}
+
+          {adminTab === 'shater' && (
+            <AdminShater orders={orders} lang={lang} />
+          )}
+
+          {(adminTab === 'marketing' ||
+            adminTab === 'tracking' ||
+            adminTab === 'wallet' ||
+            adminTab === 'funnels' ||
+            adminTab === 'services') && (
+            <AdminMarketing
+              orders={orders}
+              activeSubTab={adminTab as any}
               lang={lang}
             />
           )}
@@ -477,11 +514,11 @@ function MainApp() {
             />
           )}
 
-          {adminTab === 'qr' && (
+          {(adminTab === 'qrcode' || adminTab === 'qr') && (
             <AdminQRCode settings={settings} lang={lang} />
           )}
 
-          {adminTab === 'data' && (
+          {(adminTab === 'data' || adminTab === 'apps') && (
             <AdminDataExchange
               items={menuItems}
               categories={categories}
@@ -510,9 +547,9 @@ function MainApp() {
           />
         </AdminLayout>
       ) : (
-        /* PUBLIC DIGITAL MENU VIEW - Complete EasyOrder Storefront Redesign */
-        <div className="flex-1 flex flex-col bg-[#F8F9FA] min-h-screen text-gray-900">
-          {/* 1. EasyOrder Dual Header (Announcement + Main Red Header + Categories Subnav) */}
+        /* PUBLIC DIGITAL MENU VIEW - Official Alexandria Paper Menu Identity */
+        <div className="flex-1 flex flex-col bg-[#FAF6ED] min-h-screen text-[#261309]">
+          {/* 1. Header (Announcement + Main Red Header + Categories Subnav) */}
           <EasyOrderHeader
             settings={settings}
             categories={categories}
@@ -584,11 +621,11 @@ function MainApp() {
               <div className="mb-5 bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs flex items-center justify-between">
                 <div className="text-xs sm:text-sm font-bold text-gray-800">
                   {lang === 'ar' ? 'نتائج البحث عن:' : 'Search results for:'}{' '}
-                  <span className="text-[#d31414] font-black">"{searchQuery}"</span>
+                  <span className="text-[#8B2220] font-black">"{searchQuery}"</span>
                 </div>
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="text-xs font-bold text-gray-500 hover:text-[#d31414] cursor-pointer"
+                  className="text-xs font-bold text-gray-500 hover:text-[#8B2220] cursor-pointer"
                 >
                   {lang === 'ar' ? 'إلغاء البحث' : 'Clear search'}
                 </button>
@@ -597,7 +634,7 @@ function MainApp() {
 
             {groupedPublicCategories.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-3xl border border-gray-200 p-8 max-w-md mx-auto my-6 shadow-xs">
-                <div className="w-16 h-16 rounded-full bg-red-50 text-[#d31414] flex items-center justify-center mx-auto mb-3">
+                <div className="w-16 h-16 rounded-full bg-[#FFF9EF] text-[#8B2220] flex items-center justify-center mx-auto mb-3 border border-[#E8D8B5]">
                   <ShoppingBag className="w-8 h-8" />
                 </div>
                 <h4 className="text-base sm:text-lg font-black text-gray-900">
@@ -613,7 +650,7 @@ function MainApp() {
                     setSearchQuery('');
                     setSelectedCategoryId('all');
                   }}
-                  className="mt-4 px-4 py-2 bg-[#d31414] text-white rounded-xl text-xs font-bold hover:bg-[#b71010] transition cursor-pointer"
+                  className="mt-4 px-4 py-2 bg-[#8B2220] text-white rounded-xl text-xs font-bold hover:bg-[#721B19] transition cursor-pointer shadow-xs"
                 >
                   {lang === 'ar' ? 'عرض جميع الأصناف' : 'Show All Items'}
                 </button>
@@ -627,19 +664,19 @@ function MainApp() {
                     className="scroll-mt-36"
                   >
                     {/* Section Header */}
-                    <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-gray-200">
+                    <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-[#E0CFAB]">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-5 bg-[#d31414] rounded-full" />
-                        <h2 className="text-base sm:text-xl font-black text-gray-900">
+                        <div className="w-2 h-5 bg-[#B81D22] rounded-full shadow-xs" />
+                        <h2 className="text-base sm:text-xl font-black text-[#261309] font-['Cairo']">
                           {lang === 'ar' ? category.nameAr : category.nameEn}
                         </h2>
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                        <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#FFF8E6] text-[#6A472E] border border-[#DEC495]">
                           {items.length} {lang === 'ar' ? 'وجبة' : 'items'}
                         </span>
                       </div>
                     </div>
 
-                    {/* EasyOrder 4-Column Responsive Grid */}
+                    {/* 4-Column Responsive Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
                       {items.map((item) => (
                         <EasyOrderProductCard
@@ -671,7 +708,7 @@ function MainApp() {
             enableOrdering={settings.enableWhatsappOrdering}
           />
 
-          {/* EasyOrder Slide-over Left Cart Drawer */}
+          {/* Slide-over Left Cart Drawer */}
           <EasyOrderCartDrawer
             isOpen={isCartOpen}
             onClose={() => setIsCartOpen(false)}
@@ -688,10 +725,10 @@ function MainApp() {
             <div className="fixed bottom-4 inset-x-3 sm:inset-x-auto sm:end-6 sm:w-[420px] z-30 animate-in slide-in-from-bottom duration-300">
               <div
                 onClick={() => setIsCartOpen(true)}
-                className="bg-[#d31414] hover:bg-[#b71010] active:scale-98 text-white p-3 sm:p-3.5 rounded-2xl shadow-xl flex items-center justify-between cursor-pointer border border-white/20 transition transform ring-4 ring-[#d31414]/15"
+                className="bg-gradient-to-r from-[#B81D22] to-[#921317] hover:from-[#921317] hover:to-[#730F12] active:scale-98 text-[#FFF9EA] p-3 sm:p-3.5 rounded-2xl shadow-xl flex items-center justify-between cursor-pointer border-2 border-[#EEA323] transition transform ring-4 ring-[#B81D22]/20"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-white text-[#d31414] flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="w-9 h-9 rounded-xl bg-[#FFF9EF] text-[#B81D22] flex items-center justify-center shrink-0 shadow-xs border border-[#EEA323]/50">
                     <ShoppingBag className="w-5 h-5" />
                   </div>
                   <div>
@@ -712,13 +749,13 @@ function MainApp() {
                         )}
                       </span>
                     </div>
-                    <span className="text-[10px] text-amber-200 block">
+                    <span className="text-[10px] text-amber-200 block font-medium">
                       {lang === 'ar' ? 'اضغط لعرض السلة وإتمام الطلب' : 'Tap to review cart and order'}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 bg-white text-[#d31414] px-3 py-1.5 rounded-xl text-xs font-black shadow-xs shrink-0">
+                <div className="flex items-center gap-1.5 bg-[#FFF9EF] text-[#B81D22] px-3 py-1.5 rounded-xl text-xs font-black shadow-xs shrink-0 border border-[#EEA323]/50">
                   <span>{lang === 'ar' ? 'سلة التسوق' : 'View Cart'}</span>
                   <span className="rtl:rotate-180 text-[10px]">❯</span>
                 </div>
@@ -735,13 +772,24 @@ function MainApp() {
         </div>
       )}
 
-      {/* Admin Login Modal */}
+      {/* Admin Login Modal with Username & Password verification */}
       <AdminLoginModal
         isOpen={isLoginModalOpen}
+        configuredUsername={settings.adminUsername || 'admin'}
+        configuredPassword={settings.adminPassword || 'alex2024'}
+        configuredPin={settings.adminPinCode || '1973'}
+        onSuccess={() => {
+          setViewMode('admin');
+          window.location.hash = 'admin';
+        }}
         onClose={() => {
           setIsLoginModalOpen(false);
-          if (user && isAdmin) {
+          if (isAdmin) {
             setViewMode('admin');
+          } else {
+            if (window.location.hash === '#admin') {
+              window.history.pushState(null, '', window.location.pathname + window.location.search);
+            }
           }
         }}
       />

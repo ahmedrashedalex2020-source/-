@@ -1,24 +1,23 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrandLogo } from '../brand/BrandLogo';
 import { useAuth } from '../../context/AuthContext';
 import {
-  LayoutDashboard,
-  UtensilsCrossed,
-  FolderKanban,
-  ShieldCheck,
-  Image as ImageIcon,
-  Settings,
-  QrCode,
-  Database,
-  History,
-  Globe,
-  ExternalLink,
-  Wifi,
-  WifiOff,
+  TrendingUp,
+  Package,
+  ShoppingBag,
+  Palette,
+  ChevronDown,
+  ChevronUp,
+  Menu,
+  X,
+  Lock,
+  Eye,
   Plus,
   MessageCircle,
-  Menu,
-  CheckCircle,
+  Database,
+  QrCode,
+  Layers,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -41,358 +40,401 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   children,
 }) => {
   const isAr = lang === 'ar';
-  const { isConnected } = useAuth();
-  const tabsScrollRef = useRef<HTMLDivElement>(null);
+  const { lockAdmin } = useAuth();
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  const mainNavItems = [
-    {
-      id: 'items',
-      labelAr: 'وجبات القائمة وتعديل الأسعار',
-      labelEn: 'Menu Items & Prices',
-      icon: UtensilsCrossed,
-      badge: 'الرئيسي',
-      descAr: 'تعديل الأسعار والأصناف فوراً',
-    },
-    {
-      id: 'categories',
-      labelAr: 'أقسام وتصنيفات الطعام',
-      labelEn: 'Categories',
-      icon: FolderKanban,
-      badge: 'مهم',
-      descAr: 'إضافة وتعديل وترتيب الأقسام',
-    },
-    {
-      id: 'settings',
-      labelAr: 'إعدادات المطعم ورقم الواتساب',
-      labelEn: 'WhatsApp & Settings',
-      icon: MessageCircle,
-      badge: 'واتساب',
-      descAr: 'تعديل رقم واتساب استقبال الطلبات',
-    },
-    {
-      id: 'overview',
-      labelAr: 'لوحة الإحصائيات العامة',
-      labelEn: 'Overview & Stats',
-      icon: LayoutDashboard,
-      descAr: 'ملخص الأصناف والمبيعات',
-    },
-    {
-      id: 'verification',
-      labelAr: 'تدقيق وتوثيق الأسعار',
-      labelEn: 'Price Verification',
-      icon: ShieldCheck,
-      descAr: 'مطابقة الأسعار مع المنيو الورقي',
-    },
-    {
-      id: 'data',
-      labelAr: 'استيراد وتصدير ونسخ احتياطي',
-      labelEn: 'Import & Backup',
-      icon: Database,
-      descAr: 'تصدير واستيراد بيانات المنيو',
-    },
-    {
-      id: 'media',
-      labelAr: 'مكتبة صور الوجبات',
-      labelEn: 'Media Library',
-      icon: ImageIcon,
-      descAr: 'إدارة صور الوجبات',
-    },
-    {
-      id: 'qr',
-      labelAr: 'رمز QR والطباعة',
-      labelEn: 'QR Code',
-      icon: QrCode,
-      descAr: 'تحميل وطباعة باركود الطاولات',
-    },
-    {
-      id: 'hosting',
-      labelAr: 'ربط الدومين واستضافة InfinityFree',
-      labelEn: 'Domain & DNS (InfinityFree)',
-      icon: Globe,
-      badge: 'DNS',
-      descAr: 'خطوات ربط الدومين والـ DNS والرفع',
-    },
-    {
-      id: 'logs',
-      labelAr: 'سجل العمليات والتعديلات',
-      labelEn: 'Activity Log',
-      icon: History,
-      descAr: 'تتبع كافة التعديلات السابقة',
-    },
-  ];
+  // Accordion state for dropdowns in sidebar
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
+    orders: true,
+    products: false,
+    design: false,
+  });
 
-  // Auto-scroll active tab into view
-  useEffect(() => {
-    if (!tabsScrollRef.current) return;
-    const activeEl = tabsScrollRef.current.querySelector(
-      `[data-tab-id="${activeTab}"]`
-    ) as HTMLElement;
-    if (activeEl) {
-      activeEl.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
-    }
-  }, [activeTab]);
+  const toggleDropdown = (key: string) => {
+    setExpandedMenus((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleSelectNav = (tabId: string) => {
+    onSelectTab(tabId);
+    setIsMobileSidebarOpen(false);
+  };
 
   return (
-    <div className="min-h-screen bg-[#FBF5E8] flex flex-col text-[#392A23] pb-20 md:pb-8">
-      {/* 1. TOP HEADER WITH BRANDING & QUICK CONTROLS */}
-      <header className="sticky top-0 z-40 bg-[#2A1E19] text-white border-b-2 border-[#C58D38] shadow-md">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6">
-          <div className="flex items-center justify-between h-16 sm:h-18 gap-2">
-            {/* Logo & Dashboard Title */}
-            <div className="flex items-center gap-3">
-              <div className="bg-white/10 p-1.5 rounded-xl shrink-0">
-                <BrandLogo size="sm" showSubtitle={false} className="[&_span]:text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-black text-[#C58D38] uppercase tracking-wider block">
-                    لوحة التحكم الاحترافية للمطعم
-                  </span>
-                  <span className="hidden sm:inline-block bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    نشط مباشر
-                  </span>
-                </div>
-                <span className="text-xs sm:text-sm font-extrabold text-white line-clamp-1">
-                  كبدة إسكندراني — فرع دارسيت، مسقط
-                </span>
-              </div>
-            </div>
+    <div
+      className="min-h-screen bg-[#0b0b0b] text-[#ededed] flex flex-col font-['Cairo',sans-serif] selection:bg-[#00c853]/30 selection:text-white"
+      dir="rtl"
+    >
+      {/* ========================================================
+          TOP HEADER BAR (Dark, Minimalist, Matching Dark Theme)
+         ======================================================== */}
+      <header className="h-14 bg-[#141414] border-b border-[#222222] sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
+        {/* Right side: Mobile Menu Toggle & Brand Logo */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            className="lg:hidden p-2 rounded-lg bg-[#1c1c1c] text-[#aaaaaa] hover:text-white cursor-pointer"
+            aria-label="Toggle menu"
+          >
+            {isMobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
 
-            {/* Quick Actions & Exit to Customer Menu */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Add Item Quick Button */}
-              {onOpenAddItem && (
-                <button
-                  onClick={onOpenAddItem}
-                  className="hidden sm:flex items-center gap-1.5 bg-[#C58D38] hover:bg-[#b07b2c] text-[#2A1E19] px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition shadow-sm hover:scale-102 cursor-pointer"
-                  title="إضافة وجبة جديدة للمنيو الآن"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>إضافة وجبة +</span>
-                </button>
-              )}
-
-              {/* Firestore sync pill */}
-              <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 text-[11px] font-bold border border-[#755947]">
-                {isConnected ? (
-                  <span className="flex items-center gap-1 text-emerald-400">
-                    <Wifi className="w-3.5 h-3.5" />
-                    <span>متصل مباشر</span>
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-amber-400">
-                    <WifiOff className="w-3.5 h-3.5" />
-                    <span>مزامنة محلية</span>
-                  </span>
-                )}
-              </div>
-
-              {/* Language toggle */}
-              <button
-                onClick={onToggleLang}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold transition text-[#E8D8B5]"
-                title="تغيير اللغة"
-              >
-                <Globe className="w-3.5 h-3.5 text-[#C58D38]" />
-                <span>{isAr ? 'EN' : 'عربي'}</span>
-              </button>
-
-              {/* Back to Public Menu Button */}
-              <button
-                onClick={onExitAdmin}
-                className="flex items-center gap-1.5 bg-[#A1312E] hover:bg-[#862724] text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition shadow-sm border border-red-400 hover:scale-102 cursor-pointer"
-                title="الرجوع لقائمة الطعام العامة للزبائن"
-              >
-                <ExternalLink className="w-4 h-4" />
-                <span className="whitespace-nowrap">عرض منيو الزبائن</span>
-              </button>
-            </div>
+          <div
+            onClick={onExitAdmin}
+            className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition"
+            title={isAr ? 'معاينة المتجر' : 'Storefront Preview'}
+          >
+            <BrandLogo size="sm" showSubtitle={false} lightMode={true} />
+            <span className="hidden sm:inline-block text-[11px] font-bold text-[#888888] bg-[#1c1c1c] px-2 py-0.5 rounded-md border border-[#262626]">
+              {isAr ? 'لوحة التحكم والإدارة' : 'Admin Portal'}
+            </span>
           </div>
         </div>
 
-        {/* 2. PROMINENT NAVIGATION BUTTONS BAR (PRIMARY TABS) */}
-        <div className="bg-[#1A110D] border-t-2 border-[#C58D38]/40 py-2.5 px-2 sm:px-4 shadow-inner">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between gap-2">
-              {/* Scrollable button strip */}
-              <div
-                ref={tabsScrollRef}
-                className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 flex-1"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                {mainNavItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
+        {/* Left side actions: Store Preview, Quick Add, Lock */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Quick Add Product button */}
+          {onOpenAddItem && (
+            <button
+              onClick={onOpenAddItem}
+              className="hidden sm:inline-flex items-center gap-1.5 bg-[#00c853] hover:bg-[#00b34a] text-black font-black text-xs px-3 py-1.5 rounded-lg transition active:scale-95 cursor-pointer shadow-xs"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>{isAr ? 'إضافة منتج' : 'Add Item'}</span>
+            </button>
+          )}
 
-                  return (
-                    <button
-                      key={item.id}
-                      data-tab-id={item.id}
-                      onClick={() => onSelectTab(item.id)}
-                      className={`whitespace-nowrap px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
-                        isActive
-                          ? 'bg-[#A1312E] text-white shadow-lg ring-2 ring-[#C58D38] scale-102'
-                          : 'bg-[#2E2018] text-[#E8D8B5] hover:bg-[#3E2C22] hover:text-white border border-[#755947]/60'
-                      }`}
-                    >
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#C58D38]'}`} />
-                      <span>{isAr ? item.labelAr : item.labelEn}</span>
-                      {item.badge && (
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
-                            isActive
-                              ? 'bg-[#C58D38] text-[#2A1E19]'
-                              : 'bg-black/60 text-[#C58D38] border border-[#C58D38]/30'
-                          }`}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+          {/* Quick Storefront Preview Button */}
+          <button
+            onClick={onExitAdmin}
+            className="inline-flex items-center gap-1.5 bg-[#1c1c1c] hover:bg-[#252525] text-white border border-[#2b2b2b] text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer"
+            title={isAr ? 'العودة لواجهة المتجر وسلة الطلبات' : 'View Storefront'}
+          >
+            <Eye className="w-3.5 h-3.5 text-[#00c853]" />
+            <span className="hidden xs:inline">{isAr ? 'معاينة المتجر' : 'Store'}</span>
+          </button>
 
-              {/* Mobile quick add */}
-              {onOpenAddItem && (
-                <button
-                  onClick={onOpenAddItem}
-                  className="sm:hidden shrink-0 bg-[#C58D38] text-[#2A1E19] p-2 rounded-xl font-black text-xs flex items-center gap-1 shadow-sm"
-                  title="إضافة وجبة"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                </button>
-              )}
-            </div>
-          </div>
+          {/* Lock Session */}
+          <button
+            onClick={() => {
+              lockAdmin();
+              onExitAdmin();
+            }}
+            className="p-1.5 rounded-lg bg-[#1c1c1c] hover:bg-rose-950/40 text-[#888888] hover:text-rose-400 border border-[#2b2b2b] transition cursor-pointer"
+            title={isAr ? 'قفل لوحة التحكم فوراً' : 'Lock session'}
+          >
+            <Lock className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
-      {/* 3. SUB-HEADER BREADCRUMB & QUICK STATS BAR */}
-      <div className="max-w-7xl mx-auto w-full px-3 sm:px-6 pt-4 pb-2">
-        <div className="bg-white px-4 py-3 rounded-2xl border-2 border-[#E8D8B5] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="p-1.5 rounded-lg bg-amber-50 text-[#C58D38] border border-amber-200">
-              <Menu className="w-4 h-4" />
+      {/* ========================================================
+          MAIN BODY WITH CLEAN RIGHT SIDEBAR + WORKSPACE
+         ======================================================== */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* ========================================================
+            RIGHT SIDEBAR (Clean, focused, no clutter)
+           ======================================================== */}
+        <aside
+          className={`fixed inset-y-0 right-0 z-50 w-64 bg-[#141414] border-l border-[#222222] flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+            isMobileSidebarOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          {/* Mobile close button */}
+          <div className="lg:hidden p-3 flex justify-between items-center border-b border-[#222222]">
+            <span className="text-xs font-bold text-[#aaaaaa]">
+              {isAr ? 'لوحة التحكم' : 'Control Panel'}
             </span>
+            <button
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="p-1 text-[#888888] hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Sidebar Nav Items List */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-5 no-scrollbar">
+            {/* SECTION: إدارة المطعم الرئيسية */}
             <div>
-              <span className="text-[11px] font-bold text-gray-400 block">
-                أنت الآن في قسم:
-              </span>
-              <h1 className="text-base sm:text-lg font-black text-[#A1312E] leading-tight">
-                {mainNavItems.find((n) => n.id === activeTab)?.[isAr ? 'labelAr' : 'labelEn']}
-              </h1>
+              <h3 className="text-[11px] font-bold text-[#666666] mb-2 px-3 uppercase tracking-wider">
+                {isAr ? 'إدارة المطعم' : 'Restaurant Management'}
+              </h3>
+
+              <div className="space-y-1">
+                {/* 1. لوحة الإحصائيات (Active item with dark pill & emerald green icon) */}
+                <button
+                  onClick={() => handleSelectNav('overview')}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+                    activeTab === 'overview'
+                      ? 'bg-[#1c1c1c] text-white border border-[#262626] shadow-xs'
+                      : 'text-[#aaaaaa] hover:bg-[#181818] hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 flex items-center justify-center text-[#00c853]">
+                      <svg
+                        className="w-4 h-4 stroke-current"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M3 17l6-6 4 4 8-8" />
+                        <path d="M14 7h7v7" />
+                      </svg>
+                    </div>
+                    <span>{isAr ? 'لوحة الإحصائيات' : 'Dashboard'}</span>
+                  </div>
+                </button>
+
+                {/* 2. الطلبات (Dropdown with Package Icon) */}
+                <div>
+                  <button
+                    onClick={() => {
+                      toggleDropdown('orders');
+                      handleSelectNav('orders');
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+                      activeTab === 'orders'
+                        ? 'bg-[#1c1c1c] text-white'
+                        : 'text-[#aaaaaa] hover:bg-[#181818] hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Package className="w-4 h-4 text-[#888888]" />
+                      <span>{isAr ? 'إدارة الطلبات' : 'Orders'}</span>
+                    </div>
+                    {expandedMenus.orders ? (
+                      <ChevronUp className="w-3.5 h-3.5 text-[#666666]" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5 text-[#666666]" />
+                    )}
+                  </button>
+
+                  {/* Submenu for Orders */}
+                  {expandedMenus.orders && (
+                    <div className="pr-8 pl-2 py-1 space-y-1 text-xs text-[#888888]">
+                      <button
+                        onClick={() => handleSelectNav('orders')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• كل الطلبات' : '• All Orders'}
+                      </button>
+                      <button
+                        onClick={() => handleSelectNav('orders')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• طلبات جديدة' : '• New Orders'}
+                      </button>
+                      <button
+                        onClick={() => handleSelectNav('orders')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• قيد التجهيز' : '• In Progress'}
+                      </button>
+                      <button
+                        onClick={() => handleSelectNav('orders')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• مكتملة' : '• Completed'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. قائمة الطعام (المنتجات والتصنيفات) */}
+                <div>
+                  <button
+                    onClick={() => {
+                      toggleDropdown('products');
+                      handleSelectNav('items');
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+                      activeTab === 'items' || activeTab === 'categories' || activeTab === 'verification'
+                        ? 'bg-[#1c1c1c] text-white'
+                        : 'text-[#aaaaaa] hover:bg-[#181818] hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShoppingBag className="w-4 h-4 text-[#888888]" />
+                      <span>{isAr ? 'قائمة الطعام' : 'Menu & Food'}</span>
+                    </div>
+                    {expandedMenus.products ? (
+                      <ChevronUp className="w-3.5 h-3.5 text-[#666666]" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5 text-[#666666]" />
+                    )}
+                  </button>
+
+                  {expandedMenus.products && (
+                    <div className="pr-8 pl-2 py-1 space-y-1 text-xs text-[#888888]">
+                      <button
+                        onClick={() => handleSelectNav('items')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• كل الوجبات والسندوتشات' : '• All Items'}
+                      </button>
+                      {onOpenAddItem && (
+                        <button
+                          onClick={() => {
+                            onOpenAddItem();
+                            setIsMobileSidebarOpen(false);
+                          }}
+                          className="w-full text-right py-1.5 text-[#00c853] hover:underline cursor-pointer transition block font-bold"
+                        >
+                          {isAr ? '+ إضافة وجبة جديدة' : '+ Add New Item'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleSelectNav('categories')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• الأقسام والتصنيفات' : '• Categories'}
+                      </button>
+                      <button
+                        onClick={() => handleSelectNav('verification')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• تدقيق أسعار المنيو' : '• Price Verification'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. تصميم وإعدادات المتجر */}
+                <div>
+                  <button
+                    onClick={() => {
+                      toggleDropdown('design');
+                      handleSelectNav('settings');
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+                      activeTab === 'settings'
+                        ? 'bg-[#1c1c1c] text-white'
+                        : 'text-[#aaaaaa] hover:bg-[#181818] hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Palette className="w-4 h-4 text-[#888888]" />
+                      <span>{isAr ? 'تصميم وإعدادات المتجر' : 'Store Settings'}</span>
+                    </div>
+                    {expandedMenus.design ? (
+                      <ChevronUp className="w-3.5 h-3.5 text-[#666666]" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5 text-[#666666]" />
+                    )}
+                  </button>
+
+                  {expandedMenus.design && (
+                    <div className="pr-8 pl-2 py-1 space-y-1 text-xs text-[#888888]">
+                      <button
+                        onClick={() => handleSelectNav('settings')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• البنرات الإعلانية' : '• Hero Sliders'}
+                      </button>
+                      <button
+                        onClick={() => handleSelectNav('settings')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• شريط الإعلانات العلوي' : '• Top Announcement'}
+                      </button>
+                      <button
+                        onClick={() => handleSelectNav('settings')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• أرقام الواتساب والتواصل' : '• Contact Numbers'}
+                      </button>
+                      <button
+                        onClick={() => handleSelectNav('settings')}
+                        className="w-full text-right py-1.5 hover:text-white cursor-pointer transition block"
+                      >
+                        {isAr ? '• عنوان الفرع وساعات العمل' : '• Branch & Hours'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION: أدوات مساعدة سريعة */}
+            <div className="pt-2 border-t border-[#1f1f1f]">
+              <h3 className="text-[11px] font-bold text-[#666666] mb-2 px-3 uppercase tracking-wider">
+                {isAr ? 'أدوات مساعدة' : 'Quick Tools'}
+              </h3>
+
+              <div className="space-y-1">
+                {/* رمز QR */}
+                <button
+                  onClick={() => handleSelectNav('qrcode')}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+                    activeTab === 'qrcode'
+                      ? 'bg-[#1c1c1c] text-white border border-[#262626]'
+                      : 'text-[#aaaaaa] hover:bg-[#181818] hover:text-white'
+                  }`}
+                >
+                  <QrCode className="w-4 h-4 text-[#888888]" />
+                  <span>{isAr ? 'رمز QR للمنيو الورقي' : 'Menu QR Code'}</span>
+                </button>
+
+                {/* النسخ الاحتياطي والبيانات */}
+                <button
+                  onClick={() => handleSelectNav('data')}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+                    activeTab === 'data'
+                      ? 'bg-[#1c1c1c] text-white border border-[#262626]'
+                      : 'text-[#aaaaaa] hover:bg-[#181818] hover:text-white'
+                  }`}
+                >
+                  <Database className="w-4 h-4 text-[#888888]" />
+                  <span>{isAr ? 'تصدير ونسخ البيانات' : 'Backup & Export'}</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Quick jump shortcuts */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-bold text-[#755947] hidden md:inline">
-              تنقل سريع:
-            </span>
+          {/* Sidebar Footer: Quick Back to Storefront Button */}
+          <div className="p-3 border-t border-[#222222] bg-[#0e0e0e]">
             <button
-              onClick={() => onSelectTab('items')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                activeTab === 'items'
-                  ? 'bg-[#A1312E] text-white'
-                  : 'bg-[#FFF9EF] text-[#755947] hover:bg-[#E8D8B5]/50 border border-[#E8D8B5]'
-              }`}
+              onClick={onExitAdmin}
+              className="w-full flex items-center justify-center gap-2 bg-[#1c1c1c] hover:bg-[#252525] text-white py-2.5 px-3 rounded-xl text-xs font-black transition cursor-pointer border border-[#2b2b2b]"
             >
-              الوجبات والأسعار 🍔
-            </button>
-            <button
-              onClick={() => onSelectTab('categories')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                activeTab === 'categories'
-                  ? 'bg-[#A1312E] text-white'
-                  : 'bg-[#FFF9EF] text-[#755947] hover:bg-[#E8D8B5]/50 border border-[#E8D8B5]'
-              }`}
-            >
-              الأقسام 📁
-            </button>
-            <button
-              onClick={() => onSelectTab('settings')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                activeTab === 'settings'
-                  ? 'bg-[#A1312E] text-white'
-                  : 'bg-[#FFF9EF] text-emerald-800 hover:bg-emerald-50 border border-emerald-300'
-              }`}
-            >
-              رقم الواتساب 📱
-            </button>
-            <button
-              onClick={() => onSelectTab('overview')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                activeTab === 'overview'
-                  ? 'bg-[#A1312E] text-white'
-                  : 'bg-[#FFF9EF] text-[#755947] hover:bg-[#E8D8B5]/50 border border-[#E8D8B5]'
-              }`}
-            >
-              الإحصائيات 📊
+              <Eye className="w-4 h-4 text-[#00c853]" />
+              <span>{isAr ? 'العودة لمعاينة المتجر' : 'Back to Storefront'}</span>
             </button>
           </div>
-        </div>
-      </div>
+        </aside>
 
-      {/* 4. MAIN CONTENT VIEW */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 py-2">
-        {children}
-      </main>
-
-      {/* 5. MOBILE BOTTOM NAVIGATION DOCK (FIXED ON PHONES) */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-[#2A1E19] text-white border-t-2 border-[#C58D38] z-50 shadow-2xl px-2 py-1.5 flex items-center justify-around">
-        <button
-          onClick={() => onSelectTab('items')}
-          className={`flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-black transition ${
-            activeTab === 'items' ? 'text-[#C58D38] bg-white/10' : 'text-[#E8D8B5]'
-          }`}
-        >
-          <UtensilsCrossed className="w-5 h-5 mb-0.5" />
-          <span>الأصناف</span>
-        </button>
-
-        <button
-          onClick={() => onSelectTab('categories')}
-          className={`flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-black transition ${
-            activeTab === 'categories' ? 'text-[#C58D38] bg-white/10' : 'text-[#E8D8B5]'
-          }`}
-        >
-          <FolderKanban className="w-5 h-5 mb-0.5" />
-          <span>الأقسام</span>
-        </button>
-
-        {onOpenAddItem && (
-          <button
-            onClick={onOpenAddItem}
-            className="flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-black bg-[#A1312E] text-white shadow-md -mt-3 ring-2 ring-white"
-          >
-            <Plus className="w-5 h-5 mb-0.5 stroke-[3]" />
-            <span>إضافة صنف</span>
-          </button>
+        {/* Mobile backdrop */}
+        {isMobileSidebarOpen && (
+          <div
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="fixed inset-0 bg-black/70 z-40 lg:hidden backdrop-blur-xs"
+          />
         )}
 
-        <button
-          onClick={() => onSelectTab('settings')}
-          className={`flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-black transition ${
-            activeTab === 'settings' ? 'text-emerald-400 bg-white/10' : 'text-[#E8D8B5]'
-          }`}
-        >
-          <MessageCircle className="w-5 h-5 mb-0.5" />
-          <span>الواتساب</span>
-        </button>
+        {/* ========================================================
+            CONTENT WORKSPACE (Clean Dark Theme #0b0b0b)
+           ======================================================== */}
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 bg-[#0b0b0b] min-h-[calc(100vh-3.5rem)] relative">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
 
-        <button
-          onClick={onExitAdmin}
-          className="flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-black text-amber-300"
-        >
-          <ExternalLink className="w-5 h-5 mb-0.5" />
-          <span>المنيو</span>
-        </button>
-      </nav>
+      {/* Floating WhatsApp Support Icon in Bottom-Left Corner */}
+      <a
+        href="https://wa.me/96879348565"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-5 left-5 z-40 w-12 h-12 rounded-full bg-[#00c853] hover:bg-[#00e676] active:scale-95 shadow-lg flex items-center justify-center text-white transition duration-200 cursor-pointer drop-shadow-md hover:scale-105"
+        title="WhatsApp Direct Contact"
+        aria-label="WhatsApp"
+      >
+        <MessageCircle className="w-6 h-6 fill-white" />
+      </a>
     </div>
   );
 };

@@ -33,6 +33,17 @@ service cloud.firestore {
       allow read, write: if isValidId(logId);
     }
 
+    // Customer Orders: public order submission and admin management
+    match /orders/{orderId} {
+      allow get, list: if true;
+      allow create, update, delete: if isValidId(orderId);
+    }
+
+    // Store Analytics, Visits, and Conversion Metrics
+    match /analytics/{docId} {
+      allow read, write: if isValidId(docId);
+    }
+
     // Admins registry
     match /admins/{adminUid} {
       allow read, write: if isValidId(adminUid);
