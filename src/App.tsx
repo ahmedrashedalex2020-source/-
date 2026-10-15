@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Category, MenuItem, RestaurantSettings, CartItem, AuditLog, ProductVariant, formatBaisaToOmr } from './types/menu';
-import { MessageCircle, ShoppingBag } from 'lucide-react';
+import { MessageCircle, ShoppingBag, Sparkles } from 'lucide-react';
 import {
   subscribeCategories,
   subscribeMenuItems,
@@ -18,14 +18,14 @@ import {
 } from './services/menuService';
 import { DEFAULT_RESTAURANT_SETTINGS, INITIAL_CATEGORIES, INITIAL_MENU_ITEMS } from './data/initialData';
 
-// Public Components
-import { Header } from './components/public/Header';
-import { Hero } from './components/public/Hero';
-import { CategoryNav } from './components/public/CategoryNav';
-import { ProductCard } from './components/public/ProductCard';
+// Public EasyOrder Components
+import { EasyOrderHeader } from './components/public/EasyOrderHeader';
+import { EasyOrderHeroSlider } from './components/public/EasyOrderHeroSlider';
+import { EasyOrderCategoryCarousel } from './components/public/EasyOrderCategoryCarousel';
+import { EasyOrderFeaturedSplit } from './components/public/EasyOrderFeaturedSplit';
+import { EasyOrderProductCard } from './components/public/EasyOrderProductCard';
+import { EasyOrderCartDrawer } from './components/public/EasyOrderCartDrawer';
 import { ProductDetailModal } from './components/public/ProductDetailModal';
-import { SearchAndFilter } from './components/public/SearchAndFilter';
-import { WhatsappCartDrawer } from './components/public/WhatsappCartDrawer';
 import { Footer } from './components/public/Footer';
 
 // Admin Components
@@ -110,7 +110,12 @@ function MainApp() {
   };
 
   // Cart Operations
-  const handleAddToCart = (item: MenuItem, variant?: ProductVariant, quantity: number = 1) => {
+  const handleAddToCart = (
+    item: MenuItem,
+    variant?: ProductVariant,
+    quantity: number = 1,
+    openCartDrawer: boolean = false
+  ) => {
     const resolvedVariant =
       variant ||
       (item.hasVariants && item.variants && item.variants.length > 0
@@ -128,7 +133,24 @@ function MainApp() {
       }
       return [...prev, { item, selectedVariant: resolvedVariant, quantity }];
     });
-    setIsCartOpen(true);
+    if (openCartDrawer) {
+      setIsCartOpen(true);
+    }
+  };
+
+  const handleUpdateCardQuantity = (item: MenuItem, newQty: number) => {
+    setCartItems((prev) => {
+      const existingIdx = prev.findIndex((ci) => ci.item.id === item.id);
+      if (newQty <= 0) {
+        return prev.filter((ci) => ci.item.id !== item.id);
+      }
+      if (existingIdx >= 0) {
+        const updated = [...prev];
+        updated[existingIdx].quantity = newQty;
+        return updated;
+      }
+      return [...prev, { item, quantity: newQty }];
+    });
   };
 
   const handleUpdateCartQuantity = (index: number, newQty: number) => {
@@ -150,6 +172,44 @@ function MainApp() {
   const handleClearCart = () => {
     setCartItems([]);
   };
+
+  // Direct WhatsApp Quick Order
+  const handleDirectWhatsAppOrder = () => {
+    if (cartItems.length > 0) {
+      setIsCartOpen(true);
+    } else {
+      const rawPhone = (settings.whatsapp || settings.phone || '+96890000000').replace(/[^0-9]/g, '');
+      const msg = encodeURIComponent(
+        lang === 'ar'
+          ? 'مرحباً مطعم كبدة إسكندراني، أود الاستفسار والطلب من قائمة الطعام 🍽️'
+          : 'Hello Alexandrian Liver Restaurant, I would like to order from the menu 🍽️'
+      );
+      window.open(`https://wa.me/${rawPhone}?text=${msg}`, '_blank');
+    }
+  };
+
+  // Featured / Most Popular items for landing page highlights
+  const featuredItems = useMemo(() => {
+    return menuItems.filter((i) => i.isPublished && i.isFeatured);
+  }, [menuItems]);
+
+  // Featured split highlight category (e.g. Platters / Sandwiches / Grills)
+  const featuredSplitCategory = useMemo(() => {
+    return (
+      categories.find((c) => c.id === 'dishes-plates' && c.isPublished) ||
+      categories.find((c) => c.id === 'sandwiches' && c.isPublished) ||
+      categories.find((c) => c.id === 'grills' && c.isPublished) ||
+      categories.find((c) => c.isPublished)
+    );
+  }, [categories]);
+
+  const featuredSplitItems = useMemo(() => {
+    if (!featuredSplitCategory) return [];
+    const catItems = menuItems.filter(
+      (i) => i.categoryId === featuredSplitCategory.id && i.isPublished
+    );
+    return catItems.length > 0 ? catItems : featuredItems;
+  }, [featuredSplitCategory, menuItems, featuredItems]);
 
   // Item counts by category for public tabs
   const itemCountsByCategory = useMemo(() => {
@@ -450,86 +510,145 @@ function MainApp() {
           />
         </AdminLayout>
       ) : (
-        /* PUBLIC DIGITAL MENU VIEW */
-        <div className="flex-1 flex flex-col parchment-bg">
-          {/* Header */}
-          <Header
+        /* PUBLIC DIGITAL MENU VIEW - Complete EasyOrder Storefront Redesign */
+        <div className="flex-1 flex flex-col bg-[#F8F9FA] min-h-screen text-gray-900">
+          {/* 1. EasyOrder Dual Header (Announcement + Main Red Header + Categories Subnav) */}
+          <EasyOrderHeader
             settings={settings}
-            lang={lang}
-            onToggleLang={handleToggleLang}
-            onOpenSearch={() => setIsSearchOpen((prev) => !prev)}
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategory={(id) => {
+              setSelectedCategoryId(id);
+              if (searchQuery) setSearchQuery('');
+            }}
+            itemCountsByCategory={itemCountsByCategory}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
             cartItems={cartItems}
             onOpenCart={() => setIsCartOpen(true)}
+            lang={lang}
+            onToggleLang={handleToggleLang}
             onNavigateToAdmin={handleNavigateToAdmin}
           />
 
-          {/* Hero Banner */}
-          <Hero settings={settings} lang={lang} />
+          {/* 2. Hero Slider Banner (Displayed when on 'all' and not searching) */}
+          {!searchQuery.trim() && selectedCategoryId === 'all' && (
+            <EasyOrderHeroSlider
+              lang={lang}
+              onSelectCategory={(catId) => {
+                setSelectedCategoryId(catId);
+                const el = document.getElementById(`cat-section-${catId}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+            />
+          )}
 
-          {/* Search Bar */}
-          <SearchAndFilter
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            lang={lang}
-            onClear={() => setSearchQuery('')}
-            isOpen={isSearchOpen}
-            onClose={() => {
-              setIsSearchOpen(false);
-              setSearchQuery('');
-            }}
-          />
+          {/* 3. Visual Categories Carousel (Large Square Cards) */}
+          {!searchQuery.trim() && (
+            <EasyOrderCategoryCarousel
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              onSelectCategory={(id) => {
+                setSelectedCategoryId(id);
+                if (id !== 'all') {
+                  const el = document.getElementById(`cat-section-${id}`);
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              lang={lang}
+              itemCountsByCategory={itemCountsByCategory}
+            />
+          )}
 
-          {/* Category Sticky Navigation */}
-          <CategoryNav
-            categories={categories}
-            selectedCategoryId={selectedCategoryId}
-            onSelectCategory={setSelectedCategoryId}
-            lang={lang}
-            itemCountsByCategory={itemCountsByCategory}
-          />
+          {/* 4. Featured Split Layout: "الأكثر مبيعاً" (When on 'all' and not searching) */}
+          {!searchQuery.trim() &&
+            selectedCategoryId === 'all' &&
+            featuredSplitCategory &&
+            featuredSplitItems.length > 0 && (
+              <EasyOrderFeaturedSplit
+                category={featuredSplitCategory}
+                items={featuredSplitItems}
+                lang={lang}
+                onSelectCategory={(id) => setSelectedCategoryId(id)}
+                onSelectItem={setSelectedDetailItem}
+                onAddToCart={(it) => handleAddToCart(it, undefined, 1, false)}
+                onUpdateQuantity={handleUpdateCardQuantity}
+                cartItemCounts={cartItemCounts}
+              />
+            )}
 
-          {/* Main Menu Body */}
-          <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+          {/* 5. Main Product Grids by Category */}
+          <main className="flex-1 max-w-6xl mx-auto px-3 sm:px-6 py-6 w-full pb-28">
+            {/* Active Search Notification Banner */}
+            {searchQuery.trim() && (
+              <div className="mb-5 bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs flex items-center justify-between">
+                <div className="text-xs sm:text-sm font-bold text-gray-800">
+                  {lang === 'ar' ? 'نتائج البحث عن:' : 'Search results for:'}{' '}
+                  <span className="text-[#d31414] font-black">"{searchQuery}"</span>
+                </div>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-xs font-bold text-gray-500 hover:text-[#d31414] cursor-pointer"
+                >
+                  {lang === 'ar' ? 'إلغاء البحث' : 'Clear search'}
+                </button>
+              </div>
+            )}
+
             {groupedPublicCategories.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-3xl border border-[#E8D8B5] p-8 max-w-md mx-auto">
-                <p className="text-base font-bold text-[#392A23]">
-                  {lang === 'ar' ? 'لا توجد وجبات متوفرة حالياً' : 'No menu items found'}
-                </p>
-                <p className="text-xs text-[#755947] mt-1">
+              <div className="text-center py-16 bg-white rounded-3xl border border-gray-200 p-8 max-w-md mx-auto my-6 shadow-xs">
+                <div className="w-16 h-16 rounded-full bg-red-50 text-[#d31414] flex items-center justify-center mx-auto mb-3">
+                  <ShoppingBag className="w-8 h-8" />
+                </div>
+                <h4 className="text-base sm:text-lg font-black text-gray-900">
+                  {lang === 'ar' ? 'لم يتم العثور على وجبات مطابقة' : 'No menu items found'}
+                </h4>
+                <p className="text-xs text-gray-500 mt-1">
                   {lang === 'ar'
-                    ? 'جرب البحث بكلمة مختلفة أو اختر قسماً آخر'
-                    : 'Try searching for something else or choose another category'}
+                    ? 'جرب البحث بكلمة مختلفة أو اختر قسماً آخر من الأعلى'
+                    : 'Try searching for something else or pick another category'}
                 </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategoryId('all');
+                  }}
+                  className="mt-4 px-4 py-2 bg-[#d31414] text-white rounded-xl text-xs font-bold hover:bg-[#b71010] transition cursor-pointer"
+                >
+                  {lang === 'ar' ? 'عرض جميع الأصناف' : 'Show All Items'}
+                </button>
               </div>
             ) : (
-              <div className="space-y-12">
+              <div className="space-y-8 sm:space-y-10">
                 {groupedPublicCategories.map(({ category, items }) => (
                   <section
                     key={category.id}
                     id={`cat-section-${category.id}`}
-                    className="scroll-mt-32"
+                    className="scroll-mt-36"
                   >
                     {/* Section Header */}
-                    <div className="flex items-center gap-3 mb-5 border-b-2 border-[#E8D8B5] pb-2">
-                      <div className="w-2.5 h-6 bg-[#A1312E] rounded-full" />
-                      <h2 className="text-xl sm:text-2xl font-black text-[#392A23]">
-                        {lang === 'ar' ? category.nameAr : category.nameEn}
-                      </h2>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#E8D8B5]/60 text-[#755947]">
-                        {items.length}
-                      </span>
+                    <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-gray-200">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-5 bg-[#d31414] rounded-full" />
+                        <h2 className="text-base sm:text-xl font-black text-gray-900">
+                          {lang === 'ar' ? category.nameAr : category.nameEn}
+                        </h2>
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                          {items.length} {lang === 'ar' ? 'وجبة' : 'items'}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Product Cards Responsive Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    {/* EasyOrder 4-Column Responsive Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
                       {items.map((item) => (
-                        <ProductCard
+                        <EasyOrderProductCard
                           key={item.id}
                           item={item}
                           lang={lang}
                           onSelect={setSelectedDetailItem}
-                          onAddToCart={handleAddToCart}
-                          enableOrdering={settings.enableWhatsappOrdering}
+                          onAddToCart={(it) => handleAddToCart(it, undefined, 1, false)}
+                          onUpdateQuantity={handleUpdateCardQuantity}
                           cartQuantity={cartItemCounts[item.id] || 0}
                         />
                       ))}
@@ -540,17 +659,20 @@ function MainApp() {
             )}
           </main>
 
-          {/* Product Detail Modal */}
+          {/* Product Detail Modal (for selecting sizes/variants) */}
           <ProductDetailModal
             item={selectedDetailItem}
             onClose={() => setSelectedDetailItem(null)}
             lang={lang}
-            onAddToCart={handleAddToCart}
+            onAddToCart={(it, variant, qty) => {
+              handleAddToCart(it, variant, qty, false);
+              setSelectedDetailItem(null);
+            }}
             enableOrdering={settings.enableWhatsappOrdering}
           />
 
-          {/* WhatsApp Cart Drawer */}
-          <WhatsappCartDrawer
+          {/* EasyOrder Slide-over Left Cart Drawer */}
+          <EasyOrderCartDrawer
             isOpen={isCartOpen}
             onClose={() => setIsCartOpen(false)}
             cartItems={cartItems}
@@ -561,67 +683,50 @@ function MainApp() {
             lang={lang}
           />
 
-          {/* Floating Sticky Bottom Cart Bar for Customers - Always Visible */}
-          {!isCartOpen && (
-            <div className="fixed bottom-4 inset-x-3 sm:inset-x-auto sm:end-6 sm:w-96 z-40 animate-in slide-in-from-bottom duration-300">
-              {cartItems.length > 0 ? (
-                <div
-                  onClick={() => setIsCartOpen(true)}
-                  className="bg-[#25D366] hover:bg-[#20ba5a] text-white p-3.5 sm:p-4 rounded-2xl shadow-2xl flex items-center justify-between cursor-pointer border-2 border-white transition transform hover:scale-102 ring-4 ring-emerald-500/20"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="bg-white/20 p-2 rounded-xl">
-                      <MessageCircle className="w-6 h-6 text-white fill-white" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold block opacity-95">
-                        {cartItems.reduce((acc, curr) => acc + curr.quantity, 0)} وجبة في السلة 🛒
+          {/* Floating Bottom Cart Bar (Prompt on mobile / desktop when items exist) */}
+          {!isCartOpen && cartItems.length > 0 && (
+            <div className="fixed bottom-4 inset-x-3 sm:inset-x-auto sm:end-6 sm:w-[420px] z-30 animate-in slide-in-from-bottom duration-300">
+              <div
+                onClick={() => setIsCartOpen(true)}
+                className="bg-[#d31414] hover:bg-[#b71010] active:scale-98 text-white p-3 sm:p-3.5 rounded-2xl shadow-xl flex items-center justify-between cursor-pointer border border-white/20 transition transform ring-4 ring-[#d31414]/15"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-white text-[#d31414] flex items-center justify-center shrink-0 shadow-xs">
+                    <ShoppingBag className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black">
+                        {cartItems.reduce((acc, curr) => acc + curr.quantity, 0)} {lang === 'ar' ? 'أصناف مختارة' : 'items'}
                       </span>
-                      <span className="text-sm sm:text-base font-black font-mono">
-                        الإجمالي: {formatBaisaToOmr(
+                      <span className="text-[10px] opacity-75">•</span>
+                      <span className="text-xs sm:text-sm font-black font-mono">
+                        {formatBaisaToOmr(
                           cartItems.reduce((acc, curr) => {
                             const unitPrice = curr.selectedVariant
                               ? curr.selectedVariant.priceBaisa
                               : curr.item.basePriceBaisa;
                             return acc + unitPrice * curr.quantity;
                           }, 0),
-                          'ar'
+                          lang
                         )}
                       </span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-white text-[#128C7E] px-3.5 py-2 rounded-xl text-xs font-black shadow-xs">
-                    <span>إتمام الطلب واتساب</span>
-                    <span className="rtl:rotate-180">❯</span>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  onClick={() => setIsCartOpen(true)}
-                  className="bg-[#392A23] hover:bg-[#4E392F] text-[#E8D8B5] p-3 rounded-2xl shadow-xl flex items-center justify-between cursor-pointer border-2 border-[#C58D38] transition transform hover:scale-102"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="bg-[#A1312E] p-1.5 rounded-xl text-white">
-                      <ShoppingBag className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold block text-white">
-                        سلة الطلبات جاهزة 🛒
-                      </span>
-                      <span className="text-[11px] text-[#E8D8B5]/80">
-                        اضغط لفتح السلة أو اختر وجباتك الآن
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-[#C58D38] text-[#392A23] px-3 py-1.5 rounded-xl text-xs font-black">
-                    <span>فتح السلة</span>
+                    <span className="text-[10px] text-amber-200 block">
+                      {lang === 'ar' ? 'اضغط لعرض السلة وإتمام الطلب' : 'Tap to review cart and order'}
+                    </span>
                   </div>
                 </div>
-              )}
+
+                <div className="flex items-center gap-1.5 bg-white text-[#d31414] px-3 py-1.5 rounded-xl text-xs font-black shadow-xs shrink-0">
+                  <span>{lang === 'ar' ? 'سلة التسوق' : 'View Cart'}</span>
+                  <span className="rtl:rotate-180 text-[10px]">❯</span>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Footer */}
+          {/* Store Footer */}
           <Footer
             settings={settings}
             lang={lang}

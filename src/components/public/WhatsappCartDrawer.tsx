@@ -13,7 +13,7 @@ import {
   UtensilsCrossed,
   FileText,
   AlertCircle,
-  Clock,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface WhatsappCartDrawerProps {
@@ -39,7 +39,7 @@ export const WhatsappCartDrawer: React.FC<WhatsappCartDrawerProps> = ({
 }) => {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [orderType, setOrderType] = useState<'takeaway' | 'delivery' | 'dinein'>('takeaway');
+  const [orderType, setOrderType] = useState<'dinein' | 'takeaway' | 'delivery'>('takeaway');
   const [addressOrTable, setAddressOrTable] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -60,24 +60,19 @@ export const WhatsappCartDrawer: React.FC<WhatsappCartDrawerProps> = ({
   const handleSendWhatsappOrder = () => {
     setValidationError(null);
 
-    // Validation
+    // Form Validation
     if (cartItems.length === 0) {
-      setValidationError(isAr ? 'السلة فاضية! اختر أصنافك أولاً' : 'Cart is empty');
+      setValidationError(isAr ? 'السلة فارغة، اختر أصنافك أولاً' : 'Cart is empty');
       return;
     }
 
     if (!customerName.trim()) {
-      setValidationError(isAr ? 'من فضلك اكتب اسمك يا فندم لتسجيل الطلب باسمك' : 'Please enter your name');
+      setValidationError(isAr ? 'من فضلك اكتب اسمك لتسجيل الطلب' : 'Please enter your name');
       return;
     }
 
     if (!customerPhone.trim() || customerPhone.trim().length < 6) {
-      setValidationError(isAr ? 'من فضلك اكتب رقم تليفونك لتأكيد الطلب والتواصل معاك' : 'Please enter your phone number');
-      return;
-    }
-
-    if (orderType === 'delivery' && !addressOrTable.trim()) {
-      setValidationError(isAr ? 'من فضلك اكتب عنوان التوصيل بالتفصيل' : 'Please provide delivery address');
+      setValidationError(isAr ? 'من فضلك اكتب رقم تليفونك للتواصل وتأكيد الطلب' : 'Please enter your phone number');
       return;
     }
 
@@ -86,11 +81,15 @@ export const WhatsappCartDrawer: React.FC<WhatsappCartDrawerProps> = ({
       return;
     }
 
-    // Build the WhatsApp message
+    if (orderType === 'delivery' && !addressOrTable.trim()) {
+      setValidationError(isAr ? 'من فضلك اكتب عنوان التوصيل بالتفصيل' : 'Please provide delivery address');
+      return;
+    }
+
     const orderTypeLabel = {
+      dinein: isAr ? 'تناول بالصالة (داخل المطعم)' : 'Dine-in (Table)',
       takeaway: isAr ? 'استلام من المطعم (سفري / تيك أواي)' : 'Takeaway / Pick-up',
       delivery: isAr ? 'توصيل للمنزل' : 'Home Delivery',
-      dinein: isAr ? 'تناول داخل المطعم (صالة)' : 'Dine-in (Table)',
     }[orderType];
 
     const now = new Date();
@@ -98,136 +97,122 @@ export const WhatsappCartDrawer: React.FC<WhatsappCartDrawerProps> = ({
       hour: '2-digit',
       minute: '2-digit',
     });
-    const dateStr = now.toLocaleDateString(isAr ? 'ar-OM' : 'en-US', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
 
-    let message = `🌟 *طلب جديد من منيو كبدة إسكندراني* 🌟\n`;
-    message += `📍 فرع دارسيت — مسقط (أمام بلدية مسقط وقريب من لولو)\n`;
-    message += `⏰ ${dateStr} الساعة ${timeStr}\n`;
-    message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    let message = `*طلب جديد من المنيو الرقمي — مطعم كبدة إسكندراني* 🍽️\n`;
+    message += `📅 التاريخ والوقت: ${timeStr}\n`;
+    message += `👤 اسم العميل: ${customerName.trim()}\n`;
+    message += `📞 رقم التليفون: ${customerPhone.trim()}\n`;
+    message += `🛵 نوع الطلب: ${orderTypeLabel}\n`;
 
-    message += `👤 *بيانات العميل:* \n`;
-    message += `• *الاسم:* ${customerName.trim()}\n`;
-    message += `• *رقم الهاتف:* ${customerPhone.trim()}\n`;
-    message += `• *نوع الطلب:* ${orderTypeLabel}\n`;
-    if (addressOrTable.trim()) {
-      message += `• *${orderType === 'dinein' ? 'رقم الطاولة' : 'العنوان'}:* ${addressOrTable.trim()}\n`;
+    if (orderType === 'dinein') {
+      message += `🪑 رقم الطاولة: ${addressOrTable.trim()}\n`;
+    } else if (orderType === 'delivery') {
+      message += `📍 عنوان التوصيل: ${addressOrTable.trim()}\n`;
     }
-    message += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `📋 *تفاصيل الأصناف والطلب:* \n\n`;
+
+    if (orderNotes.trim()) {
+      message += `📝 ملاحظات خاصة: ${orderNotes.trim()}\n`;
+    }
+
+    message += `\n*🛒 تفاصيل الأصناف والكميات:*\n`;
+    message += `--------------------------------\n`;
 
     cartItems.forEach((ci, idx) => {
       const itemName = isAr ? ci.item.nameAr : ci.item.nameEn;
-      const variantName = ci.selectedVariant
+      const variantText = ci.selectedVariant
         ? ` (${isAr ? ci.selectedVariant.nameAr : ci.selectedVariant.nameEn})`
         : '';
-      const unitPriceBaisa = ci.selectedVariant
+      const unitPrice = ci.selectedVariant
         ? ci.selectedVariant.priceBaisa
         : ci.item.basePriceBaisa;
-      const subtotalBaisa = unitPriceBaisa * ci.quantity;
+      const lineTotal = formatBaisaToOmr(unitPrice * ci.quantity, 'ar');
 
-      message += `${idx + 1}. *${itemName}*${variantName}\n`;
-      message += `   الكمية: ${ci.quantity} × ${formatBaisaToOmr(unitPriceBaisa, 'ar')} = *${formatBaisaToOmr(subtotalBaisa, 'ar')}*\n`;
-      if (ci.notes) {
-        message += `   ملاحظة: ${ci.notes}\n`;
-      }
+      message += `${idx + 1}. *${itemName}${variantText}*\n`;
+      message += `   الكمية: ${ci.quantity} × ${formatBaisaToOmr(unitPrice, 'ar')} = ${lineTotal}\n`;
     });
 
-    message += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `💰 *الإجمالي الكلي:* *${formatBaisaToOmr(totalBaisa, 'ar')}*\n`;
-    message += `📦 *إجمالي عدد الوجبات:* ${totalQuantity} قطعة\n`;
+    message += `--------------------------------\n`;
+    message += `*💰 إجمالي الطلب: ${formatBaisaToOmr(totalBaisa, 'ar')}*\n`;
+    message += `\nبرجاء تأكيد استلام الطلب وتجهيزه. شكراً لكم!`;
 
-    if (orderNotes.trim()) {
-      message += `\n📝 *ملاحظات العميل:* ${orderNotes.trim()}\n`;
+    const cleanNumber = (settings.whatsapp || '79348565').replace(/[^0-9]/g, '');
+    let finalPhone = cleanNumber;
+    if (finalPhone.length === 8 && (finalPhone.startsWith('9') || finalPhone.startsWith('7'))) {
+      finalPhone = `968${finalPhone}`;
     }
 
-    message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `شكراً لاختياركم كبدة إسكندراني! يرجى تأكيد استلام الطلب وتجهيزه. 🙏✨`;
-
-    // Destination WhatsApp Number
-    const targetPhone = settings.whatsapp || '+968 79348565';
-    const cleanNumber = targetPhone.replace(/[^0-9]/g, '');
     const encoded = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encoded}`;
+    const whatsappUrl = `https://wa.me/${finalPhone}?text=${encoded}`;
 
     window.open(whatsappUrl, '_blank');
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 overflow-hidden flex flex-col justify-end sm:justify-center items-center">
+      {/* Backdrop */}
       <div
-        className="w-full max-w-lg bg-[#FFF9EF] h-full shadow-2xl flex flex-col justify-between border-s border-[#E8D8B5] animate-in slide-in-from-right duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Drawer Header */}
-        <div className="p-4 sm:p-5 bg-[#392A23] text-white border-b-2 border-[#C58D38] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-[#A1312E] rounded-xl text-white">
-              <ShoppingBag className="w-5 h-5" />
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        onClick={onClose}
+      />
+
+      {/* Bottom Sheet Container */}
+      <div className="relative w-full sm:max-w-lg bg-[#FFFDF9] rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] flex flex-col z-10 animate-in slide-in-from-bottom duration-300 border-t sm:border border-[#E8D8B5]">
+        {/* Mobile Pull Handle Indicator */}
+        <div className="w-12 h-1.5 bg-[#E8D8B5] rounded-full mx-auto mt-3 mb-1 shrink-0" />
+
+        {/* Sheet Header */}
+        <div className="px-4 py-3 border-b border-[#E8D8B5]/80 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#8B1E1E]/10 flex items-center justify-center text-[#8B1E1E]">
+              <ShoppingBag className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-black leading-tight text-white">
-                {isAr ? 'سلة الطلب وتجهيز رسالة الواتساب' : 'Your Order Cart'}
+              <h3 className="text-base font-black text-[#2C1810]">
+                {isAr ? 'سلة الطلبات' : 'Your Order Cart'}
               </h3>
-              <span className="text-[11px] text-[#E8D8B5]">
-                {cartItems.length} {isAr ? 'أصناف في السلة' : 'items'} • كبدة إسكندراني
-              </span>
+              <p className="text-[11px] text-[#755947] font-semibold">
+                {totalQuantity} {isAr ? 'وجبة مختارة' : 'items'} • {formatBaisaToOmr(totalBaisa, lang)}
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-[#E8D8B5] hover:text-white hover:bg-white/10 rounded-full transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {cartItems.length > 0 && (
+              <button
+                onClick={onClearCart}
+                className="text-[11px] text-red-600 hover:text-red-700 font-bold px-2 py-1 rounded-lg hover:bg-red-50 transition"
+              >
+                {isAr ? 'تفريغ' : 'Clear'}
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Validation Alert */}
-        {validationError && (
-          <div className="p-3 bg-red-100 border-b border-red-200 text-red-800 text-xs font-bold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
-            <span>{validationError}</span>
-          </div>
-        )}
-
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        {/* Scrollable Sheet Body */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
           {cartItems.length === 0 ? (
-            <div className="text-center py-16 text-[#755947]">
-              <div className="w-16 h-16 bg-[#F6ECD5] rounded-full flex items-center justify-center mx-auto mb-3 border border-[#C58D38]/30">
-                <ShoppingBag className="w-8 h-8 text-[#A1312E]" />
+            <div className="text-center py-12 text-[#755947]">
+              <div className="w-16 h-16 bg-[#FAF5EC] rounded-full flex items-center justify-center mx-auto mb-3 border border-[#E8D8B5]">
+                <ShoppingBag className="w-8 h-8 text-[#8B1E1E]" />
               </div>
-              <p className="font-black text-lg text-[#392A23]">السلة فاضية يا فندم!</p>
-              <p className="text-xs text-[#755947] mt-1 max-w-xs mx-auto">
-                تصفح قائمة الطعام واضغط على زرار "إضافة" عند الوجبات اللي تحبها لإضافتها للطلب هنا.
+              <p className="font-black text-base text-[#2C1810]">
+                {isAr ? 'السلة فارغة حالياً' : 'Your cart is empty'}
               </p>
-              <button
-                onClick={onClose}
-                className="mt-4 px-5 py-2.5 bg-[#A1312E] hover:bg-[#862724] text-white rounded-xl text-xs font-black transition"
-              >
-                تصفح منيو الطعام الآن
-              </button>
+              <p className="text-xs text-[#755947] mt-1">
+                {isAr ? 'اضغط على زر (+) بجوار أي وجبة لإضافتها هنا' : 'Tap (+) on any meal to add it here'}
+              </p>
             </div>
           ) : (
             <>
               {/* Items List */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-bold text-[#755947] border-b border-[#E8D8B5] pb-1.5">
-                  <span>الأصناف المختارة ({cartItems.length})</span>
-                  <button
-                    onClick={onClearCart}
-                    className="text-[11px] text-red-600 hover:underline font-semibold"
-                  >
-                    تفريغ السلة
-                  </button>
-                </div>
-
+              <div className="space-y-2">
                 {cartItems.map((ci, index) => {
                   const itemName = isAr ? ci.item.nameAr : ci.item.nameEn;
                   const variantName = ci.selectedVariant
@@ -240,45 +225,45 @@ export const WhatsappCartDrawer: React.FC<WhatsappCartDrawerProps> = ({
                   return (
                     <div
                       key={`${ci.item.id}-${ci.selectedVariant?.id || 'base'}-${index}`}
-                      className="bg-white p-3.5 rounded-2xl border border-[#E8D8B5] flex items-center justify-between gap-3 shadow-2xs"
+                      className="bg-white p-3 rounded-2xl border border-[#E8D8B5] flex items-center justify-between gap-2.5 shadow-2xs"
                     >
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-[#392A23] leading-snug truncate">
+                        <h4 className="text-xs sm:text-sm font-black text-[#2C1810] truncate">
                           {itemName}
                         </h4>
                         {variantName && (
-                          <span className="text-xs text-[#C58D38] font-bold block mt-0.5">
-                            الحجم: {variantName}
+                          <span className="text-[11px] text-[#D97706] font-bold block">
+                            {isAr ? `الحجم: ${variantName}` : `Size: ${variantName}`}
                           </span>
                         )}
-                        <span className="text-xs text-[#A1312E] font-black mt-1 block">
-                          {formatBaisaToOmr(unitPrice * ci.quantity, 'ar')}
+                        <span className="text-xs font-black text-[#8B1E1E] font-mono mt-0.5 block">
+                          {formatBaisaToOmr(unitPrice * ci.quantity, lang)}
                         </span>
                       </div>
 
                       {/* Quantity Controls */}
-                      <div className="flex items-center gap-1.5 bg-[#FFF9EF] border border-[#E8D8B5] rounded-xl p-1 shrink-0">
+                      <div className="flex items-center gap-1.5 bg-[#FAF5EC] border border-[#E8D8B5] rounded-xl p-1 shrink-0">
                         <button
                           onClick={() => onUpdateQuantity(index, ci.quantity - 1)}
-                          className="p-1 hover:bg-white rounded-md text-[#755947] transition"
+                          className="w-6 h-6 flex items-center justify-center rounded-lg bg-white text-[#5C3E2E] shadow-2xs hover:bg-[#8B1E1E] hover:text-white transition"
                         >
-                          <Minus className="w-3.5 h-3.5" />
+                          <Minus className="w-3 h-3" />
                         </button>
-                        <span className="text-xs font-black text-[#392A23] w-5 text-center font-mono">
+                        <span className="text-xs font-black text-[#2C1810] w-5 text-center font-mono">
                           {ci.quantity}
                         </span>
                         <button
                           onClick={() => onUpdateQuantity(index, ci.quantity + 1)}
-                          className="p-1 hover:bg-white rounded-md text-[#755947] transition"
+                          className="w-6 h-6 flex items-center justify-center rounded-lg bg-white text-[#5C3E2E] shadow-2xs hover:bg-[#8B1E1E] hover:text-white transition"
                         >
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-3 h-3" />
                         </button>
                       </div>
 
                       <button
                         onClick={() => onRemoveItem(index)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 transition"
-                        title="حذف"
+                        className="p-1.5 text-stone-300 hover:text-red-600 transition"
+                        title={isAr ? 'حذف' : 'Remove'}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -287,181 +272,165 @@ export const WhatsappCartDrawer: React.FC<WhatsappCartDrawerProps> = ({
                 })}
               </div>
 
-              {/* Customer Contact & Delivery Form */}
-              <div className="bg-white p-4 rounded-2xl border-2 border-[#E8D8B5] space-y-3 shadow-2xs">
-                <h4 className="text-xs font-black text-[#392A23] uppercase tracking-wider flex items-center gap-1.5 border-b border-[#E8D8B5] pb-2">
-                  <User className="w-4 h-4 text-[#A1312E]" />
-                  <span>بيانات العميل وطريقة الاستلام (مطلوبة للطلب)</span>
-                </h4>
+              {/* Order Options & Customer Form */}
+              <div className="bg-white p-3.5 rounded-2xl border border-[#E8D8B5] space-y-3 shadow-2xs">
+                {/* Order Type Tabs */}
+                <div>
+                  <label className="text-xs font-black text-[#5C3E2E] block mb-1.5">
+                    {isAr ? 'طريقة الاستلام:' : 'Order Type:'}
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5 bg-[#FAF5EC] p-1 rounded-xl border border-[#E8D8B5]">
+                    <button
+                      type="button"
+                      onClick={() => setOrderType('dinein')}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-black transition flex flex-col items-center gap-0.5 ${
+                        orderType === 'dinein'
+                          ? 'bg-[#8B1E1E] text-white shadow-xs'
+                          : 'text-[#755947] hover:bg-white/50'
+                      }`}
+                    >
+                      <UtensilsCrossed className="w-3.5 h-3.5" />
+                      <span>{isAr ? 'صالة (طاولة)' : 'Dine-in'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setOrderType('takeaway')}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-black transition flex flex-col items-center gap-0.5 ${
+                        orderType === 'takeaway'
+                          ? 'bg-[#8B1E1E] text-white shadow-xs'
+                          : 'text-[#755947] hover:bg-white/50'
+                      }`}
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>{isAr ? 'سفري / تيك أواي' : 'Takeaway'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setOrderType('delivery')}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-black transition flex flex-col items-center gap-0.5 ${
+                        orderType === 'delivery'
+                          ? 'bg-[#8B1E1E] text-white shadow-xs'
+                          : 'text-[#755947] hover:bg-white/50'
+                      }`}
+                    >
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>{isAr ? 'توصيل' : 'Delivery'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Table Number or Delivery Address */}
+                {orderType === 'dinein' && (
+                  <div>
+                    <label className="text-xs font-black text-[#5C3E2E] block mb-1">
+                      {isAr ? 'رقم الطاولة في المطعم *' : 'Table Number *'}
+                    </label>
+                    <input
+                      type="text"
+                      value={addressOrTable}
+                      onChange={(e) => setAddressOrTable(e.target.value)}
+                      placeholder={isAr ? 'مثال: طاولة رقم 4' : 'e.g. Table 4'}
+                      className="w-full bg-[#FAF5EC] border border-[#E8D8B5] focus:border-[#8B1E1E] rounded-xl px-3 py-2 text-xs font-bold text-[#2C1810] outline-none"
+                    />
+                  </div>
+                )}
+
+                {orderType === 'delivery' && (
+                  <div>
+                    <label className="text-xs font-black text-[#5C3E2E] block mb-1">
+                      {isAr ? 'عنوان التوصيل بالتفصيل *' : 'Delivery Address *'}
+                    </label>
+                    <input
+                      type="text"
+                      value={addressOrTable}
+                      onChange={(e) => setAddressOrTable(e.target.value)}
+                      placeholder={isAr ? 'المنطقة، الشارع، رقم المبنى أو الشقة' : 'Area, street, building'}
+                      className="w-full bg-[#FAF5EC] border border-[#E8D8B5] focus:border-[#8B1E1E] rounded-xl px-3 py-2 text-xs font-bold text-[#2C1810] outline-none"
+                    />
+                  </div>
+                )}
 
                 {/* Customer Name */}
                 <div>
-                  <label className="text-xs font-bold text-[#755947] block mb-1">
-                    اسم العميل بالكامل *
+                  <label className="text-xs font-black text-[#5C3E2E] block mb-1">
+                    {isAr ? 'الاسم الكريم *' : 'Your Name *'}
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <User className="w-3.5 h-3.5 absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       type="text"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="مثال: أحمد راشد / محمد علي"
-                      className="w-full bg-[#FFF9EF] border border-[#E8D8B5] focus:border-[#A1312E] rounded-xl ltr:pl-9 ltr:pr-3 rtl:pr-9 rtl:pl-3 py-2 text-xs font-bold text-[#392A23] outline-hidden"
-                      required
+                      placeholder={isAr ? 'الاسم لتسجيل الطلب' : 'Full Name'}
+                      className="w-full bg-[#FAF5EC] border border-[#E8D8B5] focus:border-[#8B1E1E] rounded-xl ltr:pl-8 ltr:pr-3 rtl:pr-8 rtl:pl-3 py-2 text-xs font-bold text-[#2C1810] outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Customer Phone */}
                 <div>
-                  <label className="text-xs font-bold text-[#755947] block mb-1">
-                    رقم هاتف العميل (للتأكيد والواتساب) *
+                  <label className="text-xs font-black text-[#5C3E2E] block mb-1">
+                    {isAr ? 'رقم الهاتف للتواصل *' : 'Phone Number *'}
                   </label>
                   <div className="relative">
-                    <Phone className="w-4 h-4 absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Phone className="w-3.5 h-3.5 absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       type="tel"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="مثال: 91234567 أو +968 91234567"
-                      className="w-full bg-[#FFF9EF] border border-[#E8D8B5] focus:border-[#A1312E] rounded-xl ltr:pl-9 ltr:pr-3 rtl:pr-9 rtl:pl-3 py-2 text-xs font-bold text-[#392A23] outline-hidden font-mono"
-                      required
+                      placeholder={isAr ? 'رقم الهاتف / الواتساب' : 'Phone / WhatsApp'}
+                      className="w-full bg-[#FAF5EC] border border-[#E8D8B5] focus:border-[#8B1E1E] rounded-xl ltr:pl-8 ltr:pr-3 rtl:pr-8 rtl:pl-3 py-2 text-xs font-bold text-[#2C1810] outline-none"
                     />
                   </div>
                 </div>
 
-                {/* Order Type Radio Buttons */}
+                {/* Special Notes */}
                 <div>
-                  <label className="text-xs font-bold text-[#755947] block mb-1.5">
-                    طريقة الاستلام *
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setOrderType('takeaway')}
-                      className={`p-2 rounded-xl text-center text-xs font-bold border transition ${
-                        orderType === 'takeaway'
-                          ? 'bg-[#A1312E] text-white border-[#A1312E]'
-                          : 'bg-[#FFF9EF] text-[#755947] border-[#E8D8B5] hover:bg-white'
-                      }`}
-                    >
-                      استلام سفري
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setOrderType('delivery')}
-                      className={`p-2 rounded-xl text-center text-xs font-bold border transition ${
-                        orderType === 'delivery'
-                          ? 'bg-[#A1312E] text-white border-[#A1312E]'
-                          : 'bg-[#FFF9EF] text-[#755947] border-[#E8D8B5] hover:bg-white'
-                      }`}
-                    >
-                      توصيل
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setOrderType('dinein')}
-                      className={`p-2 rounded-xl text-center text-xs font-bold border transition ${
-                        orderType === 'dinein'
-                          ? 'bg-[#A1312E] text-white border-[#A1312E]'
-                          : 'bg-[#FFF9EF] text-[#755947] border-[#E8D8B5] hover:bg-white'
-                      }`}
-                    >
-                      داخل الصالة
-                    </button>
-                  </div>
-                </div>
-
-                {/* Conditional Address or Table Number */}
-                {orderType === 'delivery' && (
-                  <div className="animate-in fade-in">
-                    <label className="text-xs font-bold text-[#755947] block mb-1">
-                      عنوان التوصيل بالتفصيل *
-                    </label>
-                    <div className="relative">
-                      <MapPin className="w-4 h-4 absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        value={addressOrTable}
-                        onChange={(e) => setAddressOrTable(e.target.value)}
-                        placeholder="المنطقة، الشارع، رقم المبنى..."
-                        className="w-full bg-[#FFF9EF] border border-[#E8D8B5] rounded-xl ltr:pl-9 ltr:pr-3 rtl:pr-9 rtl:pl-3 py-2 text-xs font-bold text-[#392A23] outline-hidden"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {orderType === 'dinein' && (
-                  <div className="animate-in fade-in">
-                    <label className="text-xs font-bold text-[#755947] block mb-1">
-                      رقم الطاولة في المطعم *
-                    </label>
-                    <input
-                      type="text"
-                      value={addressOrTable}
-                      onChange={(e) => setAddressOrTable(e.target.value)}
-                      placeholder="مثال: طاولة رقم 5"
-                      className="w-full bg-[#FFF9EF] border border-[#E8D8B5] rounded-xl p-2 text-xs font-bold text-[#392A23] outline-hidden"
-                    />
-                  </div>
-                )}
-
-                {/* Additional notes */}
-                <div>
-                  <label className="text-xs font-bold text-[#755947] block mb-1">
-                    أي طلبات أو ملاحظات خاصة؟ (اختياري)
+                  <label className="text-xs font-black text-[#5C3E2E] block mb-1">
+                    {isAr ? 'ملاحظات خاصة (اختياري)' : 'Notes (optional)'}
                   </label>
                   <textarea
                     rows={2}
                     value={orderNotes}
                     onChange={(e) => setOrderNotes(e.target.value)}
-                    placeholder="مثال: زيادة طحينة، بدون بصل، شطة زيادة..."
-                    className="w-full bg-[#FFF9EF] border border-[#E8D8B5] rounded-xl p-2 text-xs text-[#392A23] outline-hidden"
+                    placeholder={isAr ? 'بدون شطة، طحينة زيادة، خبز بلدي...' : 'Special requests...'}
+                    className="w-full bg-[#FAF5EC] border border-[#E8D8B5] focus:border-[#8B1E1E] rounded-xl p-2.5 text-xs text-[#2C1810] outline-none resize-none"
                   />
                 </div>
               </div>
+
+              {/* Validation Warning */}
+              {validationError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl animate-in shake">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{validationError}</span>
+                </div>
+              )}
             </>
           )}
         </div>
 
-        {/* Drawer Footer & WhatsApp Trigger */}
+        {/* Fixed Footer with Send WhatsApp Button */}
         {cartItems.length > 0 && (
-          <div className="p-4 sm:p-5 bg-white border-t-2 border-[#E8D8B5] space-y-3">
-            {/* Subtotal & Total display */}
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs text-[#755947] font-bold block">
-                  المجموع الكلي المطلوب:
-                </span>
-                <span className="text-xs text-gray-400 font-semibold">
-                  ({totalQuantity} وجبات)
-                </span>
-              </div>
-              <div className="text-end">
-                <span className="text-2xl font-black text-[#A1312E] font-mono">
-                  {formatBaisaToOmr(totalBaisa, 'ar')}
-                </span>
-              </div>
+          <div className="p-3.5 sm:p-4 bg-white border-t border-[#E8D8B5] shrink-0">
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-xs font-bold text-[#755947]">
+                {isAr ? 'الإجمالي الكلي:' : 'Total Amount:'}
+              </span>
+              <span className="text-base sm:text-lg font-black text-[#8B1E1E] font-mono">
+                {formatBaisaToOmr(totalBaisa, lang)}
+              </span>
             </div>
 
-            {/* BIG WHATSAPP SEND BUTTON */}
             <button
               onClick={handleSendWhatsappOrder}
-              className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20ba5a] text-white py-3.5 px-4 rounded-2xl font-black text-sm sm:text-base shadow-lg transition transform active:scale-98 cursor-pointer"
+              className="w-full py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] active:scale-98 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition cursor-pointer"
             >
-              <MessageCircle className="w-6 h-6 fill-white shrink-0" />
-              <span>إرسال الطلب الآن لواتساب المطعم 📱</span>
+              <MessageCircle className="w-5 h-5 fill-white" />
+              <span>{isAr ? 'إرسال الطلب عبر واتساب 📲' : 'Send Order via WhatsApp 📲'}</span>
             </button>
-
-            {/* Target WhatsApp Info & Reassurance */}
-            <div className="text-[11px] text-[#755947] text-center flex items-center justify-center gap-1.5 pt-1">
-              <span>سيتم إرسال الطلب مباشرة لرقم واتساب الإدارة:</span>
-              <strong className="text-emerald-700 font-mono font-bold">
-                {settings.whatsapp || '+968 79348565'}
-              </strong>
-            </div>
           </div>
         )}
       </div>

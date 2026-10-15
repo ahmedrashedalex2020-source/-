@@ -19,7 +19,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
   const isAr = lang === 'ar';
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll active tab into view
+  // Auto-scroll the active pill into view
   useEffect(() => {
     if (!scrollContainerRef.current) return;
     const activeElement = scrollContainerRef.current.querySelector(
@@ -35,26 +35,36 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
   }, [selectedCategoryId]);
 
   const publishedCategories = categories.filter((c) => c.isPublished);
+  const totalPublishedItems = Object.values(itemCountsByCategory).reduce((a, b) => a + b, 0);
 
   return (
-    <nav className="sticky top-18 sm:top-20 z-30 bg-[#FFF9EF]/95 backdrop-blur-md border-b border-[#E8D8B5] py-2.5 shadow-2xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="sticky top-[86px] sm:top-[94px] z-30 bg-[#FFFDF9]/95 backdrop-blur-md border-b border-[#E8D8B5]/80 py-2 shadow-2xs transition-all">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4">
         <div
           ref={scrollContainerRef}
-          className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1"
+          className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth py-0.5"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {/* All Items Pill */}
           <button
             data-category-id="all"
             onClick={() => onSelectCategory('all')}
-            className={`whitespace-nowrap px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+            className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
               selectedCategoryId === 'all'
-                ? 'bg-[#A1312E] text-white shadow-xs scale-102'
-                : 'bg-white text-[#755947] border border-[#E8D8B5] hover:border-[#C58D38] hover:bg-[#F6ECD5]/40'
+                ? 'bg-[#8B1E1E] text-white shadow-sm ring-2 ring-[#8B1E1E]/20 scale-102'
+                : 'bg-white text-[#5C3E2E] border border-[#E8D8B5] hover:border-[#8B1E1E]/40 hover:bg-[#FAF5EC]'
             }`}
           >
-            <span>{isAr ? 'جميع الأقسام' : 'All Menu'}</span>
+            <span>{isAr ? 'الكل' : 'All'}</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                selectedCategoryId === 'all'
+                  ? 'bg-[#D97706] text-white'
+                  : 'bg-[#E8D8B5]/50 text-[#755947]'
+              }`}
+            >
+              {totalPublishedItems}
+            </span>
           </button>
 
           {publishedCategories.map((category) => {
@@ -66,19 +76,19 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
                 key={category.id}
                 data-category-id={category.id}
                 onClick={() => onSelectCategory(category.id)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all shrink-0 flex items-center gap-2 ${
+                className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                   isSelected
-                    ? 'bg-[#A1312E] text-white shadow-xs scale-102 ring-2 ring-[#C58D38]/30'
-                    : 'bg-white text-[#755947] border border-[#E8D8B5] hover:border-[#C58D38] hover:bg-[#F6ECD5]/40'
+                    ? 'bg-[#8B1E1E] text-white shadow-sm ring-2 ring-[#8B1E1E]/20 scale-102'
+                    : 'bg-white text-[#5C3E2E] border border-[#E8D8B5] hover:border-[#8B1E1E]/40 hover:bg-[#FAF5EC]'
                 }`}
               >
                 <span>{isAr ? category.nameAr : category.nameEn}</span>
                 {count > 0 && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold transition ${
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold transition ${
                       isSelected
-                        ? 'bg-[#C58D38] text-white'
-                        : 'bg-[#E8D8B5]/60 text-[#755947]'
+                        ? 'bg-[#D97706] text-white'
+                        : 'bg-[#E8D8B5]/50 text-[#755947]'
                     }`}
                   >
                     {count}

@@ -93,6 +93,28 @@ export interface CartItem {
   notes?: string;
 }
 
+export interface CustomerOrder {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  orderType: 'takeaway' | 'delivery' | 'dinein';
+  addressOrTable: string;
+  orderNotes?: string;
+  items: {
+    itemId: string;
+    nameAr: string;
+    nameEn: string;
+    variantNameAr?: string;
+    variantNameEn?: string;
+    priceBaisa: number;
+    quantity: number;
+    lineTotalBaisa: number;
+  }[];
+  totalBaisa: number;
+  createdAt: string;
+  status: 'new' | 'preparing' | 'completed' | 'cancelled';
+}
+
 /**
  * Converts integer baisa to standard 3-decimal OMR string.
  * e.g., 500 -> "0.500 OMR", 1200 -> "1.200 OMR", 10000 -> "10.000 OMR"

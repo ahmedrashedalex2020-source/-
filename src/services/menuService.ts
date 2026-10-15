@@ -12,13 +12,15 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, auth } from '../lib/firebase';
-import { Category, MenuItem, RestaurantSettings, AuditLog } from '../types/menu';
+import { Category, MenuItem, RestaurantSettings, AuditLog, CustomerOrder } from '../types/menu';
 import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, DEFAULT_RESTAURANT_SETTINGS } from '../data/initialData';
 
 const CATEGORIES_COL = 'categories';
 const ITEMS_COL = 'menuItems';
 const SETTINGS_COL = 'restaurantSettings';
 const LOGS_COL = 'auditLogs';
+const ORDERS_COL = 'orders';
+const LS_ORDERS = 'alex_liver_orders_v1';
 
 // Local storage backup keys
 const LS_ITEMS = 'alex_liver_items_v1';
@@ -441,3 +443,55 @@ export async function bulkImportMenuItems(items: MenuItem[]): Promise<{ added: n
     return { added: items.length, updated: 0 };
   }
 }
+
+/**
+ * Customer Orders (Save order to Firestore & local storage, write audit log)
+ */
+export async function saveCustomerOrder(order: CustomerOrder): Promise<boolean> {
+  const localOrders = getLocal<CustomerOrder[]>(LS_ORDERS) || [];
+  setLocal(LS_ORDERS, [order, ...localOrders].slice(0, 100));
+
+  try {
+    const orderRef = doc(db, ORDERS_COL, order.id);
+    await setDoc(orderRef, order);
+    await logAdminAction(
+      'طلب_زبون_جديد',
+      'import',
+      order.id,
+      `طلب جديد من ${order.customerName} بقيمة ${(order.totalBaisa / 1000).toFixed(3)} ر.ع (${order.items.length} وجبة)`
+    );
+    return true;
+  } catch (error) {
+    console.warn('Firestore saveCustomerOrder:', error);
+    return true; // Saved locally as backup
+  }
+}
+
+export function subscribeOrders(callback: (orders: CustomerOrder[]) => void): () => void {
+  try {
+    const q = query(collection(db, ORDERS_COL), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const list: CustomerOrder[] = [];
+          snapshot.forEach((d) => list.push(d.data() as CustomerOrder));
+          setLocal(LS_ORDERS, list);
+          callback(list);
+        } else {
+          callback(getLocal<CustomerOrder[]>(LS_ORDERS) || []);
+        }
+      },
+      (error) => {
+        console.warn('subscribeOrders listener error:', error);
+        callback(getLocal<CustomerOrder[]>(LS_ORDERS) || []);
+      }
+    );
+    return unsubscribe;
+  } catch (err) {
+    console.warn('subscribeOrders setup error:', err);
+    callback(getLocal<CustomerOrder[]>(LS_ORDERS) || []);
+    return () => {};
+  }
+}
+

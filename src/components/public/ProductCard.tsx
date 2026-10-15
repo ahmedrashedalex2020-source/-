@@ -1,14 +1,15 @@
 import React from 'react';
 import { MenuItem, formatBaisaToOmr } from '../../types/menu';
-import { Sparkles, Utensils, AlertCircle, Eye, ShoppingBag, Plus, Check } from 'lucide-react';
+import { Sparkles, Utensils, Plus, Minus, Layers } from 'lucide-react';
 
 interface ProductCardProps {
   item: MenuItem;
   lang: 'ar' | 'en';
   onSelect: (item: MenuItem) => void;
   onAddToCart?: (item: MenuItem) => void;
-  enableOrdering?: boolean;
+  onUpdateQuantity?: (item: MenuItem, newQty: number) => void;
   cartQuantity?: number;
+  enableOrdering?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -16,6 +17,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   lang,
   onSelect,
   onAddToCart,
+  onUpdateQuantity,
   cartQuantity = 0,
 }) => {
   const isAr = lang === 'ar';
@@ -23,9 +25,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const name = isAr ? item.nameAr : item.nameEn;
   const description = isAr ? item.descriptionAr : item.descriptionEn;
   const portion = isAr ? item.portionDetailsAr : item.portionDetailsEn;
-  const accompaniments = isAr ? item.accompanimentsAr : item.accompanimentsEn;
 
-  // Pricing display
+  // Price formatting
   let priceDisplay = formatBaisaToOmr(item.basePriceBaisa, lang);
   if (item.hasVariants && item.variants && item.variants.length > 0) {
     const minPrice = Math.min(...item.variants.map((v) => v.priceBaisa));
@@ -37,177 +38,172 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         ? `من ${formatBaisaToOmr(minPrice, lang)}`
         : `From ${formatBaisaToOmr(minPrice, lang)}`;
     }
-  } else if (item.extractionStatus === 'missing_price' || item.basePriceBaisa === 0) {
-    priceDisplay = isAr ? 'السعر حسب الطلب / مراجعة' : 'Market Price / Review';
   }
 
-  const handleCardClick = () => {
-    onSelect(item);
-  };
-
-  const handleAddButtonClick = (e: React.MouseEvent) => {
+  // Handle direct Quick Add (+)
+  const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!item.isAvailable) return;
+
     if (item.hasVariants) {
-      // If item has variants, open modal so customer picks their size
+      // If item has variants, open size picker
       onSelect(item);
     } else {
-      // Direct add to cart
-      if (onAddToCart) onAddToCart(item);
+      if (cartQuantity === 0) {
+        if (onAddToCart) onAddToCart(item);
+      } else {
+        if (onUpdateQuantity) onUpdateQuantity(item, cartQuantity + 1);
+        else if (onAddToCart) onAddToCart(item);
+      }
+    }
+  };
+
+  // Handle Quick Minus (-)
+  const handleQuickMinus = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onUpdateQuantity) {
+      onUpdateQuantity(item, Math.max(0, cartQuantity - 1));
     }
   };
 
   return (
     <div
-      onClick={handleCardClick}
-      className={`group relative bg-white rounded-3xl border-2 transition-all duration-200 hover:shadow-xl cursor-pointer flex flex-col justify-between p-4 sm:p-5 ${
+      onClick={() => onSelect(item)}
+      className={`group relative bg-white hover:bg-[#FFFDF9] rounded-2xl border transition-all duration-200 cursor-pointer p-3 sm:p-3.5 flex items-center justify-between gap-3 shadow-2xs hover:shadow-md ${
         cartQuantity > 0
-          ? 'border-emerald-500 ring-2 ring-emerald-200 bg-emerald-50/10'
-          : 'border-[#E8D8B5] hover:border-[#A1312E]'
-      } ${!item.isAvailable ? 'opacity-70 bg-gray-50/80' : ''}`}
+          ? 'border-[#8B1E1E]/40 ring-1 ring-[#8B1E1E]/20 bg-[#FFFBF8]'
+          : 'border-[#E8D8B5]/80 hover:border-[#8B1E1E]/30'
+      } ${!item.isAvailable ? 'opacity-65 bg-stone-50' : ''}`}
     >
-      <div>
-        {/* Top Badges */}
-        <div className="flex items-center justify-between gap-2 mb-2.5">
-          <div className="flex items-center gap-1.5 flex-wrap">
+      {/* Left / Right Content: Name, Description, Price, Portion */}
+      <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch py-0.5">
+        <div>
+          {/* Badges row */}
+          <div className="flex items-center gap-1.5 flex-wrap mb-1">
             {item.isFeatured && (
-              <span className="inline-flex items-center gap-1 bg-[#FFF4DC] text-[#A1312E] border border-[#C58D38]/40 text-[11px] font-black px-2.5 py-0.5 rounded-full">
-                <Sparkles className="w-3 h-3 text-[#C58D38] fill-[#C58D38]" />
-                <span>{isAr ? 'مميز' : 'Featured'}</span>
+              <span className="inline-flex items-center gap-1 bg-[#FFF4DC] text-[#8B1E1E] border border-[#D97706]/30 text-[10px] font-black px-1.5 py-0.2 rounded-md">
+                <Sparkles className="w-2.5 h-2.5 text-[#D97706] fill-[#D97706]" />
+                <span>{isAr ? 'مميز' : 'Popular'}</span>
               </span>
             )}
             {item.hasVariants && (
-              <span className="bg-[#437E9D]/15 text-[#437E9D] border border-[#437E9D]/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
-                {isAr
-                  ? `${item.variants?.length || 3} أحجام`
-                  : `${item.variants?.length || 3} Sizes`}
+              <span className="inline-flex items-center gap-1 bg-[#FAF2EB] text-[#755947] border border-[#E8D8B5] text-[10px] font-bold px-1.5 py-0.2 rounded-md">
+                <Layers className="w-2.5 h-2.5 text-[#D97706]" />
+                <span>{isAr ? 'أحجام' : 'Sizes'}</span>
               </span>
             )}
-            {cartQuantity > 0 && (
-              <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-black px-2.5 py-0.5 rounded-full animate-in zoom-in">
-                <Check className="w-3 h-3" />
-                <span>{isAr ? `${cartQuantity} بالسلة` : `${cartQuantity} in Cart`}</span>
-              </span>
-            )}
-            {item.extractionStatus === 'missing_price' && (
-              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                <AlertCircle className="w-3 h-3" />
-                <span>{isAr ? 'السعر قيد المراجعة' : 'Price Review'}</span>
+            {!item.isAvailable && (
+              <span className="bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-1.5 py-0.2 rounded-md">
+                {isAr ? 'نافذ' : 'Sold out'}
               </span>
             )}
           </div>
 
-          {!item.isAvailable && (
-            <span className="bg-red-50 text-red-600 border border-red-200 text-[11px] font-black px-2.5 py-0.5 rounded-lg">
-              {isAr ? 'غير متوفر (نافذ)' : 'Sold Out'}
+          {/* Item Name */}
+          <h3 className="text-sm sm:text-base font-black text-[#2C1810] group-hover:text-[#8B1E1E] transition-colors leading-snug truncate">
+            {name}
+          </h3>
+
+          {/* Short Description */}
+          {description && (
+            <p className="text-[11px] sm:text-xs text-[#755947] mt-0.5 line-clamp-1 sm:line-clamp-2 leading-relaxed">
+              {description}
+            </p>
+          )}
+
+          {/* Portion details if present */}
+          {portion && (
+            <span className="text-[10px] text-[#A8795A] font-semibold mt-1 inline-block">
+              {portion}
             </span>
           )}
         </div>
 
-        {/* Product Title & Details */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1">
-            <h3 className="text-base sm:text-lg font-black text-[#392A23] group-hover:text-[#A1312E] transition-colors leading-snug">
-              {name}
-            </h3>
-
-            {/* Sub-name in alternative language for authenticity */}
-            <p className="text-xs text-[#755947]/70 font-semibold mt-0.5 font-['Inter']">
-              {isAr ? item.nameEn : item.nameAr}
-            </p>
-
-            {/* Description */}
-            {description && (
-              <p className="text-xs text-[#755947] mt-1.5 line-clamp-2 leading-relaxed">
-                {description}
-              </p>
-            )}
-
-            {/* Portion info / pieces */}
-            {portion && (
-              <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-[#A1312E] bg-[#FFF9EF] px-2.5 py-1 rounded-xl border border-[#E8D8B5] font-bold">
-                <Utensils className="w-3 h-3 text-[#C58D38]" />
-                <span>{portion}</span>
-              </div>
-            )}
-
-            {/* Accompaniments */}
-            {accompaniments && !portion && (
-              <p className="mt-1.5 text-[11px] text-[#755947]/80 italic">
-                {accompaniments}
-              </p>
-            )}
+        {/* Bottom Row: Price & Inline Quantity Stepper */}
+        <div className="mt-2 flex items-center justify-between gap-2 pt-1 border-t border-dashed border-[#E8D8B5]/60">
+          {/* Price */}
+          <div className="flex items-baseline gap-1">
+            <span className="text-sm sm:text-base font-black text-[#8B1E1E] font-mono tracking-tight">
+              {priceDisplay}
+            </span>
           </div>
 
-          {/* Thumbnail */}
-          <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-2xl overflow-hidden bg-[#FFF9EF] border-2 border-[#E8D8B5] flex items-center justify-center text-[#C58D38] group-hover:border-[#C58D38] transition shadow-xs">
-            {item.imageUrl ? (
-              <img
-                src={item.imageUrl}
-                alt={name}
-                loading="lazy"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center p-2 text-center">
-                <Utensils className="w-7 h-7 text-[#A1312E]/40 mb-1" />
-                <span className="text-[9px] text-[#755947]/70 font-bold leading-tight">
-                  كبدة إسكندراني
-                </span>
-              </div>
-            )}
-          </div>
+          {/* Interactive Quick Add / Counter Button */}
+          {item.isAvailable ? (
+            <div>
+              {cartQuantity === 0 ? (
+                <button
+                  type="button"
+                  onClick={handleQuickAdd}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#8B1E1E] hover:bg-[#721818] active:scale-95 text-white text-xs font-black shadow-2xs transition cursor-pointer"
+                  title={isAr ? 'إضافة للسلة' : 'Add to cart'}
+                  aria-label="Add to cart"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{item.hasVariants ? (isAr ? 'اختر' : 'Pick') : (isAr ? 'أضف' : 'Add')}</span>
+                </button>
+              ) : (
+                /* Inline Stepper (+ / count / -) */
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1.5 bg-[#8B1E1E] text-white rounded-xl p-1 shadow-sm transition"
+                >
+                  <button
+                    type="button"
+                    onClick={handleQuickMinus}
+                    className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/20 hover:bg-white/30 text-white transition active:scale-90"
+                    title={isAr ? 'تقليل الكمية' : 'Decrease'}
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+
+                  <span className="text-xs font-black px-1.5 min-w-[20px] text-center font-mono">
+                    {cartQuantity}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={handleQuickAdd}
+                    className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/20 hover:bg-white/30 text-white transition active:scale-90"
+                    title={isAr ? 'زيادة الكمية' : 'Increase'}
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <span className="text-[10px] text-stone-400 font-bold">
+              {isAr ? 'غير متوفر' : 'Unavailable'}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Footer / Price & Add to Cart Button */}
-      <div className="mt-4 pt-3 border-t border-[#E8D8B5] flex items-center justify-between gap-2">
-        <div className="flex flex-col">
-          <span className="text-[10px] text-[#755947] font-bold uppercase tracking-wider">
-            {isAr ? 'السعر' : 'Price'}
-          </span>
-          <span className="text-base sm:text-lg font-black text-[#A1312E] tracking-tight font-mono">
-            {priceDisplay}
-          </span>
-        </div>
+      {/* Side Image Thumbnail (Square with Rounded Corners) */}
+      <div className="relative w-22 h-22 sm:w-24 sm:h-24 shrink-0 rounded-2xl overflow-hidden bg-[#FAF5EC] border border-[#E8D8B5] shadow-2xs flex items-center justify-center">
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={name}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center p-2 text-center text-[#755947]">
+            <Utensils className="w-6 h-6 text-[#8B1E1E]/50 mb-0.5" />
+            <span className="text-[9px] font-bold opacity-60">كبدة إسكندراني</span>
+          </div>
+        )}
 
-        <div className="flex items-center gap-2">
-          {/* Quick Eye View */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(item);
-            }}
-            className="p-2 text-[#755947] hover:text-[#A1312E] hover:bg-[#FFF9EF] rounded-xl transition border border-[#E8D8B5] cursor-pointer"
-            title={isAr ? 'عرض التفاصيل' : 'View details'}
-            aria-label="View details"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-
-          {/* PROMINENT ADD TO CART BUTTON */}
-          {item.isAvailable ? (
-            <button
-              onClick={handleAddButtonClick}
-              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition shadow-md hover:scale-105 active:scale-95 cursor-pointer ${
-                cartQuantity > 0
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-300'
-                  : 'bg-[#A1312E] hover:bg-[#862724] text-white'
-              }`}
-              title={isAr ? 'إضافة إلى سلة الطلبات' : 'Add to cart'}
-            >
-              <ShoppingBag className="w-4 h-4" />
-              <span>
-                {item.hasVariants
-                  ? isAr ? 'اختيار الحجم 🛒' : 'Select Size 🛒'
-                  : isAr ? 'أضف للسلة 🛒' : 'Add to Cart 🛒'}
-              </span>
-            </button>
-          ) : (
-            <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-xl">
-              {isAr ? 'غير متوفر' : 'Sold Out'}
-            </span>
-          )}
-        </div>
+        {/* Floating Cart Badge on Image if in Cart */}
+        {cartQuantity > 0 && (
+          <div className="absolute top-1 ltr:right-1 rtl:left-1 w-5 h-5 rounded-full bg-[#D97706] text-white text-[10px] font-black flex items-center justify-center shadow-xs border border-white">
+            {cartQuantity}
+          </div>
+        )}
       </div>
     </div>
   );
