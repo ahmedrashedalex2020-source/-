@@ -1,0 +1,126 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "Restaurant menu category representing food and beverage groupings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nameAr": { "type": "string" },
+        "nameEn": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "displayOrder": { "type": "number" },
+        "isPublished": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "nameAr", "nameEn", "displayOrder", "isPublished"]
+    },
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Individual food or beverage menu product with pricing, variants, and verification status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "nameAr": { "type": "string" },
+        "nameEn": { "type": "string" },
+        "descriptionAr": { "type": "string" },
+        "descriptionEn": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "basePriceBaisa": { "type": "number" },
+        "hasVariants": { "type": "boolean" },
+        "variants": { "type": "array" },
+        "portionDetailsAr": { "type": "string" },
+        "portionDetailsEn": { "type": "string" },
+        "isAvailable": { "type": "boolean" },
+        "isFeatured": { "type": "boolean" },
+        "isPublished": { "type": "boolean" },
+        "displayOrder": { "type": "number" },
+        "extractionStatus": { "type": "string" },
+        "sourceImage": { "type": "string" },
+        "originalPriceText": { "type": "string" },
+        "reviewedBy": { "type": "string" },
+        "reviewedAt": { "type": "string" },
+        "adminNotes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "categoryId", "nameAr", "nameEn", "basePriceBaisa", "isAvailable", "isPublished", "extractionStatus"]
+    },
+    "RestaurantSettings": {
+      "title": "RestaurantSettings",
+      "description": "Global settings, contact information, branding, and ordering toggles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nameAr": { "type": "string" },
+        "nameEn": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "currency": { "type": "string" },
+        "addressAr": { "type": "string" },
+        "addressEn": { "type": "string" },
+        "phone": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "instagram": { "type": "string" },
+        "googleMapsUrl": { "type": "string" },
+        "openingHours": { "type": "string" },
+        "defaultLanguage": { "type": "string" },
+        "publicMenuUrl": { "type": "string" },
+        "enableWhatsappOrdering": { "type": "boolean" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "nameAr", "nameEn", "currency", "whatsapp"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "System and administrative action audit history",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "actorId": { "type": "string" },
+        "actorEmail": { "type": "string" },
+        "action": { "type": "string" },
+        "entityType": { "type": "string" },
+        "entityId": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "actorEmail", "action", "entityType"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized administrator user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "Category" },
+      "description": "Menu categories collection"
+    },
+    "/menuItems/{itemId}": {
+      "schema": { "$ref": "MenuItem" },
+      "description": "Menu items collection"
+    },
+    "/restaurantSettings/{settingId}": {
+      "schema": { "$ref": "RestaurantSettings" },
+      "description": "Restaurant configuration"
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "AuditLog" },
+      "description": "Administrative audit trail"
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "AdminUser" },
+      "description": "Admin access registry"
+    }
+  }
+}

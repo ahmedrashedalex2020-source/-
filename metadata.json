@@ -1,0 +1,7 @@
+{
+  "name": "Alexandrian Liver Digital Menu & Admin CMS",
+  "description": "Bilingual digital restaurant menu and CMS dashboard for Alexandrian Liver (كبدة إسكندراني), Daris Muscat Oman with verified prices in OMR and real-time updates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

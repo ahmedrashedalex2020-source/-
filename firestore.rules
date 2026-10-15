@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default safety catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // Categories: public read & live CMS write
+    match /categories/{categoryId} {
+      allow get, list: if true;
+      allow write: if isValidId(categoryId);
+    }
+
+    // Menu items: public read & live CMS write
+    match /menuItems/{itemId} {
+      allow get, list: if true;
+      allow write: if isValidId(itemId);
+    }
+
+    // Restaurant Settings: public read & live CMS write
+    match /restaurantSettings/{settingId} {
+      allow get, list: if true;
+      allow write: if isValidId(settingId);
+    }
+
+    // Audit Logs: tracking activity
+    match /auditLogs/{logId} {
+      allow read, write: if isValidId(logId);
+    }
+
+    // Admins registry
+    match /admins/{adminUid} {
+      allow read, write: if isValidId(adminUid);
+    }
+  }
+}

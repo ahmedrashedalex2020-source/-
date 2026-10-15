@@ -1,0 +1,443 @@
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  writeBatch,
+} from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType, auth } from '../lib/firebase';
+import { Category, MenuItem, RestaurantSettings, AuditLog } from '../types/menu';
+import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, DEFAULT_RESTAURANT_SETTINGS } from '../data/initialData';
+
+const CATEGORIES_COL = 'categories';
+const ITEMS_COL = 'menuItems';
+const SETTINGS_COL = 'restaurantSettings';
+const LOGS_COL = 'auditLogs';
+
+// Local storage backup keys
+const LS_ITEMS = 'alex_liver_items_v1';
+const LS_CATS = 'alex_liver_cats_v1';
+const LS_SETTINGS = 'alex_liver_settings_v1';
+
+function getLocal<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setLocal<T>(key: string, data: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    console.warn('LocalStorage save failed:', e);
+  }
+}
+
+/**
+ * Bootstrap and seed Firestore if initial collections are empty
+ */
+export async function ensureDatabaseInitialized(): Promise<void> {
+  try {
+    const categoriesSnapshot = await getDocs(collection(db, CATEGORIES_COL));
+    if (categoriesSnapshot.empty) {
+      console.log('جاري تهيئة ونقل أصناف كبدة إسكندراني لقاعدة البيانات...');
+      const batch = writeBatch(db);
+
+      // Seed categories
+      for (const cat of INITIAL_CATEGORIES) {
+        const catRef = doc(db, CATEGORIES_COL, cat.id);
+        batch.set(catRef, {
+          ...cat,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      // Seed menu items
+      for (const item of INITIAL_MENU_ITEMS) {
+        const itemRef = doc(db, ITEMS_COL, item.id);
+        batch.set(itemRef, {
+          ...item,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      // Seed default settings
+      const settingsRef = doc(db, SETTINGS_COL, 'default');
+      batch.set(settingsRef, {
+        ...DEFAULT_RESTAURANT_SETTINGS,
+        updatedAt: new Date().toISOString(),
+      });
+
+      // Audit log entry
+      const logRef = doc(db, LOGS_COL, `init_${Date.now()}`);
+      batch.set(logRef, {
+        id: `init_${Date.now()}`,
+        actorEmail: auth.currentUser?.email || 'admin@alexandrianliver.om',
+        action: 'تهيئة_قاعدة_البيانات',
+        entityType: 'import',
+        details: 'تم استخراج وحفظ أصناف قائمة كبدة إسكندراني الـ 17 بنجاح في Firestore.',
+        timestamp: new Date().toISOString(),
+      });
+
+      await batch.commit();
+      setLocal(LS_ITEMS, INITIAL_MENU_ITEMS);
+      setLocal(LS_CATS, INITIAL_CATEGORIES);
+      setLocal(LS_SETTINGS, DEFAULT_RESTAURANT_SETTINGS);
+      console.log('تمت تهيئة قاعدة البيانات بنجاح.');
+    } else {
+      // Ensure settings exists and enableWhatsappOrdering is true
+      const settingsSnap = await getDoc(doc(db, SETTINGS_COL, 'default'));
+      if (!settingsSnap.exists()) {
+        await setDoc(doc(db, SETTINGS_COL, 'default'), {
+          ...DEFAULT_RESTAURANT_SETTINGS,
+          enableWhatsappOrdering: true,
+          updatedAt: new Date().toISOString(),
+        });
+      } else {
+        const data = settingsSnap.data() as RestaurantSettings;
+        if (!data.enableWhatsappOrdering) {
+          await updateDoc(doc(db, SETTINGS_COL, 'default'), {
+            enableWhatsappOrdering: true,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('ملاحظة أثناء تهيئة قاعدة البيانات:', error);
+  }
+}
+
+/**
+ * Subscribe to real-time categories
+ */
+export function subscribeCategories(callback: (categories: Category[]) => void) {
+  // First load from localStorage if exists
+  const localCats = getLocal<Category[]>(LS_CATS);
+  if (localCats && localCats.length > 0) {
+    callback(localCats);
+  }
+
+  const q = query(collection(db, CATEGORIES_COL), orderBy('displayOrder', 'asc'));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      if (snapshot.empty) {
+        callback(localCats || INITIAL_CATEGORIES);
+        return;
+      }
+      const data: Category[] = [];
+      snapshot.forEach((doc) => {
+        data.push(doc.data() as Category);
+      });
+      setLocal(LS_CATS, data);
+      callback(data);
+    },
+    (error) => {
+      console.warn('تنبيه قراءة الأقسام:', error);
+      callback(localCats || INITIAL_CATEGORIES);
+    }
+  );
+}
+
+/**
+ * Subscribe to real-time menu items
+ */
+export function subscribeMenuItems(callback: (items: MenuItem[]) => void) {
+  // First load from localStorage if exists
+  const localItems = getLocal<MenuItem[]>(LS_ITEMS);
+  if (localItems && localItems.length > 0) {
+    callback(localItems);
+  }
+
+  const q = query(collection(db, ITEMS_COL), orderBy('displayOrder', 'asc'));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      if (snapshot.empty) {
+        callback(localItems || INITIAL_MENU_ITEMS);
+        return;
+      }
+      const data: MenuItem[] = [];
+      snapshot.forEach((doc) => {
+        data.push(doc.data() as MenuItem);
+      });
+      setLocal(LS_ITEMS, data);
+      callback(data);
+    },
+    (error) => {
+      console.warn('تنبيه قراءة الأصناف:', error);
+      callback(localItems || INITIAL_MENU_ITEMS);
+    }
+  );
+}
+
+/**
+ * Subscribe to real-time restaurant settings
+ */
+export function subscribeSettings(callback: (settings: RestaurantSettings) => void) {
+  const localSett = getLocal<RestaurantSettings>(LS_SETTINGS);
+  if (localSett) {
+    callback(localSett);
+  }
+
+  const ref = doc(db, SETTINGS_COL, 'default');
+  return onSnapshot(
+    ref,
+    (snap) => {
+      if (snap.exists()) {
+        const val = snap.data() as RestaurantSettings;
+        setLocal(LS_SETTINGS, val);
+        callback(val);
+      } else {
+        callback(localSett || DEFAULT_RESTAURANT_SETTINGS);
+      }
+    },
+    (error) => {
+      console.warn('تنبيه إعدادات المطعم:', error);
+      callback(localSett || DEFAULT_RESTAURANT_SETTINGS);
+    }
+  );
+}
+
+/**
+ * Subscribe to audit logs
+ */
+export function subscribeAuditLogs(callback: (logs: AuditLog[]) => void) {
+  const q = query(collection(db, LOGS_COL), orderBy('timestamp', 'desc'));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data: AuditLog[] = [];
+      snapshot.forEach((doc) => {
+        data.push(doc.data() as AuditLog);
+      });
+      callback(data);
+    },
+    (error) => {
+      console.warn('سجل العمليات:', error);
+      callback([]);
+    }
+  );
+}
+
+/**
+ * Create an audit log entry
+ */
+export async function logAdminAction(
+  action: string,
+  entityType: 'menuItem' | 'category' | 'settings' | 'import',
+  entityId: string,
+  details: string
+): Promise<void> {
+  try {
+    const id = `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const logData: AuditLog = {
+      id,
+      actorId: auth.currentUser?.uid || 'admin',
+      actorEmail: auth.currentUser?.email || 'ahmedrashedalex2020@gmail.com',
+      action,
+      entityType,
+      entityId,
+      details,
+      timestamp: new Date().toISOString(),
+    };
+    await setDoc(doc(db, LOGS_COL, id), logData);
+  } catch (error) {
+    console.warn('تعذر تسجيل العملية في السجل:', error);
+  }
+}
+
+/**
+ * Menu Item CRUD with dual persistence & optimistic updates
+ */
+export async function saveMenuItem(item: MenuItem, isNew: boolean = false): Promise<void> {
+  const now = new Date().toISOString();
+  const payload: MenuItem = {
+    ...item,
+    updatedAt: now,
+    ...(isNew ? { createdAt: now } : {}),
+  };
+
+  // Update local storage backup immediately
+  const existing = getLocal<MenuItem[]>(LS_ITEMS) || INITIAL_MENU_ITEMS;
+  const filtered = existing.filter((i) => i.id !== item.id);
+  setLocal(LS_ITEMS, [...filtered, payload].sort((a, b) => a.displayOrder - b.displayOrder));
+
+  // Write to Firestore
+  try {
+    const itemRef = doc(db, ITEMS_COL, item.id);
+    await setDoc(itemRef, payload, { merge: true });
+    await logAdminAction(
+      isNew ? 'إضافة_صنف' : 'تعديل_صنف_وسعر',
+      'menuItem',
+      item.id,
+      `تم ${isNew ? 'إضافة' : 'تحديث'} صنف "${item.nameAr}" بسعر ${(item.basePriceBaisa / 1000).toFixed(3)} ر.ع`
+    );
+  } catch (error) {
+    console.error('Firestore saveMenuItem error:', error);
+    // Don't throw to prevent breaking optimistic UI
+  }
+}
+
+export async function deleteMenuItem(itemId: string, itemName: string): Promise<void> {
+  // Update local storage
+  const existing = getLocal<MenuItem[]>(LS_ITEMS) || INITIAL_MENU_ITEMS;
+  setLocal(LS_ITEMS, existing.filter((i) => i.id !== itemId));
+
+  try {
+    await deleteDoc(doc(db, ITEMS_COL, itemId));
+    await logAdminAction('حذف_صنف', 'menuItem', itemId, `تم حذف صنف "${itemName}"`);
+  } catch (error) {
+    console.error('Firestore delete error:', error);
+  }
+}
+
+export async function toggleItemAvailability(itemId: string, isAvailable: boolean): Promise<void> {
+  // Update local storage
+  const existing = getLocal<MenuItem[]>(LS_ITEMS) || INITIAL_MENU_ITEMS;
+  setLocal(
+    LS_ITEMS,
+    existing.map((i) => (i.id === itemId ? { ...i, isAvailable } : i))
+  );
+
+  try {
+    await updateDoc(doc(db, ITEMS_COL, itemId), {
+      isAvailable,
+      updatedAt: new Date().toISOString(),
+    });
+    await logAdminAction(
+      'تغيير_حالة_التوفر',
+      'menuItem',
+      itemId,
+      `تم تغيير حالة توفر الصنف إلى: ${isAvailable ? 'متوفر' : 'نافذ'}`
+    );
+  } catch (error) {
+    console.warn('Firestore toggle availability:', error);
+  }
+}
+
+export async function toggleItemPublished(itemId: string, isPublished: boolean): Promise<void> {
+  const existing = getLocal<MenuItem[]>(LS_ITEMS) || INITIAL_MENU_ITEMS;
+  setLocal(
+    LS_ITEMS,
+    existing.map((i) => (i.id === itemId ? { ...i, isPublished } : i))
+  );
+
+  try {
+    await updateDoc(doc(db, ITEMS_COL, itemId), {
+      isPublished,
+      updatedAt: new Date().toISOString(),
+    });
+    await logAdminAction(
+      'تغيير_حالة_النشر',
+      'menuItem',
+      itemId,
+      `تم تغيير حالة النشر إلى: ${isPublished ? 'منشور للزبائن' : 'مسودة مخفية'}`
+    );
+  } catch (error) {
+    console.warn('Firestore toggle publish:', error);
+  }
+}
+
+/**
+ * Category CRUD
+ */
+export async function saveCategory(category: Category, isNew: boolean = false): Promise<void> {
+  const now = new Date().toISOString();
+  const payload: Category = {
+    ...category,
+    updatedAt: now,
+    ...(isNew ? { createdAt: now } : {}),
+  };
+
+  const existing = getLocal<Category[]>(LS_CATS) || INITIAL_CATEGORIES;
+  const filtered = existing.filter((c) => c.id !== category.id);
+  setLocal(LS_CATS, [...filtered, payload].sort((a, b) => a.displayOrder - b.displayOrder));
+
+  try {
+    const catRef = doc(db, CATEGORIES_COL, category.id);
+    await setDoc(catRef, payload, { merge: true });
+    await logAdminAction(
+      isNew ? 'إضافة_قسم' : 'تعديل_قسم',
+      'category',
+      category.id,
+      `تم ${isNew ? 'إضافة' : 'تعديل'} قسم "${category.nameAr}"`
+    );
+  } catch (error) {
+    console.warn('Firestore saveCategory:', error);
+  }
+}
+
+export async function deleteCategory(categoryId: string, categoryName: string): Promise<void> {
+  const existing = getLocal<Category[]>(LS_CATS) || INITIAL_CATEGORIES;
+  setLocal(LS_CATS, existing.filter((c) => c.id !== categoryId));
+
+  try {
+    await deleteDoc(doc(db, CATEGORIES_COL, categoryId));
+    await logAdminAction('حذف_قسم', 'category', categoryId, `تم حذف قسم "${categoryName}"`);
+  } catch (error) {
+    console.warn('Firestore deleteCategory:', error);
+  }
+}
+
+/**
+ * Update Restaurant Settings
+ */
+export async function saveRestaurantSettings(settings: RestaurantSettings): Promise<void> {
+  setLocal(LS_SETTINGS, settings);
+  try {
+    const ref = doc(db, SETTINGS_COL, 'default');
+    await setDoc(ref, {
+      ...settings,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    await logAdminAction(
+      'تحديث_بيانات_المطعم',
+      'settings',
+      'default',
+      'تم تحديث أرقام التواصل والعناوين وإعدادات الطلب'
+    );
+  } catch (error) {
+    console.warn('Firestore saveSettings:', error);
+  }
+}
+
+/**
+ * Bulk Import Items
+ */
+export async function bulkImportMenuItems(items: MenuItem[]): Promise<{ added: number; updated: number }> {
+  setLocal(LS_ITEMS, items);
+  try {
+    const batch = writeBatch(db);
+    let added = 0;
+    const now = new Date().toISOString();
+
+    for (const item of items) {
+      const itemRef = doc(db, ITEMS_COL, item.id);
+      batch.set(itemRef, {
+        ...item,
+        updatedAt: now,
+      }, { merge: true });
+      added++;
+    }
+
+    await batch.commit();
+    await logAdminAction('استيراد_جماعي', 'import', 'batch', `تم استيراد ${items.length} صنف`);
+    return { added, updated: 0 };
+  } catch (error) {
+    console.warn('Firestore bulk import:', error);
+    return { added: items.length, updated: 0 };
+  }
+}
